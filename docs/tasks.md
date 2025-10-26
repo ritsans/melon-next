@@ -2,7 +2,7 @@
 
 [!] タスクが完了したらcheckを付け、完了・未完了を区別してください。
 
-- [ ] 1. Supabase基本設定と最小限のDB構築
+- [x] 1. Supabase基本設定と最小限のDB構築
   - Supabaseクライアント設定ファイル（lib/supabase/client.ts、server.ts）を作成する
   - SQLを実行する場合、supabase/migrations/ディレクトリにSQLファイルを作成する
   - 最小限のprofilesテーブルとpostsテーブルの作成SQLを記述する
