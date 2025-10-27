@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A project based on Next.js 16.0.0. It uses the App Router and is structured with TypeScript, Tailwind CSS v4, and Biome for code formatting.
+A community-based content platform built with Next.js 16.0.0 and Supabase. It uses the App Router and is structured with TypeScript, Tailwind CSS v4, and Biome for code formatting. The platform features emotion-based reactions and tag-based post categorization for lightweight SNS interactions.
 
 ## Project Documentation
 
@@ -59,9 +59,24 @@ Biome を使用してコード全体を自動フォーマットします。
   - `layout.tsx`: グローバルレイアウト(Geist フォントの設定を含む)
   - `page.tsx`: トップページコンポーネント
   - `globals.css`: Tailwind CSS のグローバルスタイル
-- **`src/lib/`**: 共通ユーティリティ関数
+  - `(auth)/`: 認証関連のページグループ
+    - `login/page.tsx`: ログインページ
+    - `signup/page.tsx`: サインアップページ
+- **`src/lib/`**: 共通ユーティリティ関数とヘルパー
   - `utils.ts`: `cn()` 関数 - clsx と tailwind-merge を組み合わせた Tailwind CSS のクラス名マージユーティリティ
-- **`src/components/ui/`**: shadcn/ui コンポーネント(今後追加予定)
+  - `validations.ts`: Zod バリデーションスキーマ定義（ログイン、サインアップ、投稿フォームなど）
+  - `auth.ts`: 認証ヘルパー関数（login, signup, logout, getCurrentUser, getProfile）
+  - `supabase/`: Supabase クライアント設定
+    - `client.ts`: クライアントサイド用 Supabase クライアント
+    - `server.ts`: サーバーサイド用 Supabase クライアント
+    - `database.types.ts`: データベース型定義（Supabase CLI で自動生成）
+- **`src/components/`**: React コンポーネント
+  - `ui/`: shadcn/ui コンポーネント（button, input, label, card など）
+  - `auth/`: 認証関連コンポーネント
+    - `LoginForm.tsx`: ログインフォーム
+    - `SignupForm.tsx`: サインアップフォーム
+- **`supabase/migrations/`**: データベースマイグレーションファイル
+  - `20250927000000_initial_schema.sql`: 初期スキーマ（profiles, posts, reactions, tags テーブル）
 
 ### Path Alias
 shadcn/ui の設定により、以下の path alias が利用可能です:
@@ -104,17 +119,69 @@ Biome はフォーマットのみに使用され、Lint は無効(ESLint を使�
 
 ## Key Technologies
 
+### フロントエンド
 - **Next.js 16.0.0**: React フレームワーク(App Router)
 - **React 19.2.0**: UI ライブラリ
 - **TypeScript 5**: 型システム
 - **Tailwind CSS v4**: ユーティリティファーストの CSS フレームワーク
-- **Biome**: コードフォーマッター
-- **ESLint**: リンター(Next.js 推奨設定)
 - **shadcn/ui**: 再利用可能な UI コンポーネントライブラリ
+- **lucide-react**: アイコンライブラリ
+
+### バックエンド・認証
+- **Supabase**: バックエンドプラットフォーム（PostgreSQL + Auth + Storage）
+- **@supabase/ssr**: Next.js App Router 対応の Supabase SSR クライアント
+- **Supabase Auth**: メール・パスワード認証システム
+
+### フォーム・バリデーション
+- **React Hook Form**: 高パフォーマンスなフォーム管理ライブラリ
+- **Zod**: TypeScript ファーストなスキーマバリデーション
+- **@hookform/resolvers**: React Hook Form と Zod の統合
+
+### ユーティリティ
 - **class-variance-authority**: コンポーネントバリアント管理
 - **clsx & tailwind-merge**: Tailwind CSS クラス名の条件付き結合とマージ
-- **lucide-react**: アイコンライブラリ
 - **tw-animate-css**: Tailwind CSS アニメーションユーティリティ
+
+### 開発ツール
+- **Biome**: コードフォーマッター
+- **ESLint**: リンター(Next.js 推奨設定)
+- **Supabase CLI**: データベースマイグレーション管理
+
+## Authentication System
+
+このプロジェクトは Supabase Auth を使用したメール・パスワード認証を実装しています。
+
+### 認証フロー
+
+1. **サインアップ**: `/signup` でメールアドレスとパスワードを登録
+2. **ログイン**: `/login` でメールアドレスとパスワードでログイン
+3. **オンボーディング**: 初回登録後にユーザー名とプロフィール情報を設定（今後実装予定）
+4. **セッション管理**: Supabase が Cookie ベースのセッション管理を自動処理
+
+### 認証関連ファイル
+
+- **`src/lib/auth.ts`**: 認証ヘルパー関数（Server Actions）
+  - `login(data)`: ログイン処理
+  - `signup(data)`: サインアップ処理
+  - `logout()`: ログアウト処理
+  - `getCurrentUser()`: 現在のユーザー取得
+  - `getProfile(userId)`: プロフィール情報取得
+
+- **`src/lib/validations.ts`**: フォームバリデーションスキーマ
+  - `loginSchema`: ログインフォームのバリデーション
+  - `signupSchema`: サインアップフォームのバリデーション
+  - `onboardingSchema`: オンボーディングフォームのバリデーション
+  - `postSchema`: 投稿フォームのバリデーション
+
+### 環境変数
+
+プロジェクトのルートに `.env.local` ファイルが必要です：
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_ACCESS_TOKEN=your-supabase-access-token
+```
 
 ## MCP server
 
@@ -122,7 +189,15 @@ Biome はフォーマットのみに使用され、Lint は無効(ESLint を使�
 
 - If you get a deprecated error, use the Context7 MCP server to get the latest version of the code syntax. If you want to get the latest information about the library, use Context7 as well.
 
-### Note
+## Important Notes
 
-- Next.js 16（ベータ版）から、`middleware.ts` は非推奨となり、`proxy.ts` に名称が変更されました。
-*理由は、用語が持つ曖昧さを解消し、その機能の役割をより明確にするためです。
+### Next.js 16 Changes
+
+- Next.js 16（ベータ版）から、`middleware.ts` は非推奨となり、`proxy.ts` に名称が変更されました。
+- 理由は、用語が持つ曖昧さを解消し、その機能の役割をより明確にするためです。
+
+### Database Migrations
+
+- データベーススキーマの変更は `supabase/migrations/` ディレクトリに SQL ファイルとして管理されます
+- マイグレーションは Supabase CLI を使用して適用します： `supabase db push`
+- 型定義の更新： `supabase gen types typescript --local > src/lib/supabase/database.types.ts`
