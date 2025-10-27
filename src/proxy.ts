@@ -1,5 +1,5 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 /**
  * プロキシ：認証状態の管理とセッションの更新
@@ -33,10 +33,8 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // セッションの更新（重要：これによりセッションが自動的に更新される）
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // セッションの更新（返り値は利用しないが、これによりクッキーが最新化される）
+  await supabase.auth.getUser();
 
   // 認証が必要なページへのアクセス制御（今後実装）
   // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {

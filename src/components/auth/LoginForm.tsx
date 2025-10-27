@@ -1,40 +1,37 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { login } from "@/lib/auth";
-import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { login } from "@/lib/auth";
+import { type LoginFormData, loginSchema } from "@/lib/validations";
 
 /**
  * ログインフォームコンポーネント
  */
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
     setError(null);
-    startTransition(async () => {
-      const result = await login(data);
-      if (result?.error) {
-        setError(result.error);
-      }
-    });
+    const result = await login(data);
+    if (result?.error) {
+      setError(result.error);
+    }
   };
 
   return (
@@ -46,11 +43,7 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* エラーメッセージ */}
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
 
           {/* メールアドレス */}
           <div className="space-y-2">
@@ -60,7 +53,7 @@ export function LoginForm() {
               type="email"
               placeholder="example@email.com"
               {...register("email")}
-              disabled={isPending}
+              disabled={isSubmitting}
             />
             {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
           </div>
@@ -73,14 +66,14 @@ export function LoginForm() {
               type="password"
               placeholder="••••••••"
               {...register("password")}
-              disabled={isPending}
+              disabled={isSubmitting}
             />
             {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
           </div>
 
           {/* ログインボタン */}
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "ログイン中..." : "ログイン"}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "ログイン中..." : "ログイン"}
           </Button>
 
           {/* サインアップリンク */}

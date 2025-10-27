@@ -1,40 +1,37 @@
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { signup } from "@/lib/auth";
-import { signupSchema, type SignupFormData } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { signup } from "@/lib/auth";
+import { type SignupFormData, signupSchema } from "@/lib/validations";
 
 /**
  * サインアップフォームコンポーネント
  */
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = (data: SignupFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setError(null);
-    startTransition(async () => {
-      const result = await signup(data);
-      if (result?.error) {
-        setError(result.error);
-      }
-    });
+    const result = await signup(data);
+    if (result?.error) {
+      setError(result.error);
+    }
   };
 
   return (
@@ -46,11 +43,7 @@ export function SignupForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* エラーメッセージ */}
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
 
           {/* メールアドレス */}
           <div className="space-y-2">
@@ -60,7 +53,7 @@ export function SignupForm() {
               type="email"
               placeholder="example@email.com"
               {...register("email")}
-              disabled={isPending}
+              disabled={isSubmitting}
             />
             {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
           </div>
@@ -73,7 +66,7 @@ export function SignupForm() {
               type="password"
               placeholder="••••••••"
               {...register("password")}
-              disabled={isPending}
+              disabled={isSubmitting}
             />
             {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
           </div>
@@ -86,16 +79,14 @@ export function SignupForm() {
               type="password"
               placeholder="••••••••"
               {...register("confirmPassword")}
-              disabled={isPending}
+              disabled={isSubmitting}
             />
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
-            )}
+            {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>}
           </div>
 
           {/* サインアップボタン */}
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "登録中..." : "アカウントを作成"}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "登録中..." : "アカウントを作成"}
           </Button>
 
           {/* ログインリンク */}
