@@ -121,3 +121,8 @@ Biome はフォーマットのみに使用され、Lint は無効(ESLint を使�
 ### Context7
 
 - If you get a deprecated error, use the Context7 MCP server to get the latest version of the code syntax. If you want to get the latest information about the library, use Context7 as well.
+
+### Note
+
+- Next.js 16（ベータ版）から、`middleware.ts` は非推奨となり、`proxy.ts` に名称が変更されました。
+*理由は、用語が持つ曖昧さを解消し、その機能の役割をより明確にするためです。
