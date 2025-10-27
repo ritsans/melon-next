@@ -1,36 +1,22 @@
 module.exports = {
   disableEmoji: false,
   format: "{type}: {subject}",
-  list: [
-    "fix",
-    "feat",
-    "refactor",
-    "test",
-    "style",
-    "chore",
-    "docs",
-    "perf",
-    "ci",
-  ],
+  list: ["add", "fix", "docs", "feat", "refactor", "test", "style", "perf"],
   maxMessageLength: 64,
   minMessageLength: 3,
   questions: ["type", "subject"],
   scopes: [],
   types: {
-    chore: {
-      description: "ドキュメントの生成やビルドプロセス、ライブラリなどの変更",
-      value: "chore",
-    },
-    ci: {
-      description: "CI用の設定やスクリプトに関する変更",
-      value: "ci",
+    add: {
+      description: "新しいファイル、ライブラリの追加など",
+      value: "add",
     },
     docs: {
-      description: "ドキュメントのみの変更",
+      description: "ドキュメントの更新",
       value: "docs",
     },
     feat: {
-      description: "新機能",
+      description: "新機能の追加",
       value: "feat",
     },
     fix: {
@@ -38,19 +24,19 @@ module.exports = {
       value: "fix",
     },
     perf: {
-      description: "パフォーマンス改善を行うためのコードの変更",
+      description: "パフォーマンス改善のための変更",
       value: "perf",
     },
     refactor: {
-      description: "バグ修正や機能の追加を行わないコードの変更",
+      description: "バグ修正や機能の追加を行わない変更",
       value: "refactor",
     },
     style: {
-      description: "コードの処理に影響しない変更（スペースや書式設定など）",
+      description: "コードの処理に影響しない変更（スペースや書式設定）",
       value: "style",
     },
     test: {
-      description: "テストコードの変更",
+      description: "テストコードの追加や修正",
       value: "test",
     },
   },
