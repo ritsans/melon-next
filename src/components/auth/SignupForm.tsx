@@ -41,53 +41,59 @@ export function SignupForm() {
         <CardDescription>メールアドレスとパスワードでアカウントを作成してください</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* エラーメッセージ */}
-          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
-
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           {/* メールアドレス */}
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="email">メールアドレス</Label>
             <Input
               id="email"
-              type="email"
+              type="text"
+              autoComplete="email"
               placeholder="example@email.com"
               {...register("email")}
               disabled={isSubmitting}
+              className="mt-2"
             />
-            {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
+            {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
           </div>
 
           {/* パスワード */}
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="password">パスワード</Label>
             <Input
               id="password"
               type="password"
+              autoComplete="new-password"
               placeholder="••••••••"
               {...register("password")}
               disabled={isSubmitting}
+              className="mt-2"
             />
-            {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
+            {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
           </div>
 
           {/* パスワード確認 */}
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="confirmPassword">パスワード（確認）</Label>
             <Input
               id="confirmPassword"
               type="password"
+              autoComplete="new-password"
               placeholder="••••••••"
               {...register("confirmPassword")}
               disabled={isSubmitting}
+              className="mt-2"
             />
-            {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>}
+            {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
           </div>
 
           {/* サインアップボタン */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "登録中..." : "アカウントを作成"}
           </Button>
+
+          {/* 認証エラーメッセージ */}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           {/* ログインリンク */}
           <p className="text-center text-sm text-gray-600">
