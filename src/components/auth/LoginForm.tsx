@@ -35,13 +35,21 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>ログイン</CardTitle>
-        <CardDescription>メールアドレスとパスワードでログインしてください</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <Card className="w-full max-w-4xl py-0 sm:flex-row sm:gap-0">
+      <CardContent className="basis-2/5 px-0">
+        <img
+          src="/melon1.jpg"
+          alt="Login Banner"
+          className="size-full rounded-l-xl object-cover"
+        />
+      </CardContent>
+      <div className="basis-3/5">
+        <CardHeader className="pt-6 px-8">
+          <CardTitle>ログイン</CardTitle>
+          <CardDescription>メールアドレスとパスワードでログインしてください</CardDescription>
+        </CardHeader>
+        <CardContent className="px-8">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 max-w-sm mx-auto">
           {/* メールアドレス */}
           <div>
             <Label htmlFor="email">メールアドレス</Label>
@@ -127,6 +135,7 @@ export function LoginForm() {
           </p>
         </form>
       </CardContent>
+      </div>
     </Card>
   );
 }
