@@ -1,6 +1,3 @@
-
 export default function Home() {
-  return (
-    <div>no elements</div>
-  );
+  return <div>no elements</div>;
 }

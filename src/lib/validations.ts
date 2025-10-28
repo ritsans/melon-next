@@ -35,10 +35,7 @@ export const onboardingSchema = z.object({
     .min(3, "ユーザー名は3文字以上で入力してください")
     .max(20, "ユーザー名は20文字以下で入力してください")
     .regex(/^[a-zA-Z0-9_]+$/, "英数字とアンダースコアのみ使用可能です"),
-  display_name: z
-    .string()
-    .max(50, "表示名は50文字以下で入力してください")
-    .optional(),
+  display_name: z.string().max(50, "表示名は50文字以下で入力してください").optional(),
   bio: z.string().max(200, "自己紹介は200文字以下で入力してください").optional(),
   interests: z
     .array(z.string())
@@ -52,10 +49,7 @@ export type OnboardingFormData = z.infer<typeof onboardingSchema>;
  * 投稿フォームのバリデーションスキーマ
  */
 export const postSchema = z.object({
-  content: z
-    .string()
-    .min(1, "投稿内容を入力してください")
-    .max(500, "投稿は500文字以下で入力してください"),
+  content: z.string().min(1, "投稿内容を入力してください").max(500, "投稿は500文字以下で入力してください"),
   tag: z.string().min(1, "タグを選択してください"),
 });
 

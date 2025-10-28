@@ -47,7 +47,7 @@ export function SignupForm() {
             <Label htmlFor="email">メールアドレス</Label>
             <Input
               id="email"
-              type="text"
+              type="email"
               autoComplete="email"
               placeholder="example@email.com"
               {...register("email")}

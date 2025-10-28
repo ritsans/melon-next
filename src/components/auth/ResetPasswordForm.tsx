@@ -68,9 +68,7 @@ export function ResetPasswordForm() {
               disabled={isSubmitting}
               className="mt-2"
             />
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>
-            )}
+            {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
           </div>
 
           {/* 再設定ボタン */}

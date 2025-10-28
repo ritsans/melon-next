@@ -2,12 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import type {
-  LoginFormData,
-  SignupFormData,
-  ForgotPasswordFormData,
-  ResetPasswordFormData,
-} from "./validations";
+import type { LoginFormData, SignupFormData, ForgotPasswordFormData, ResetPasswordFormData } from "./validations";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -76,11 +71,7 @@ export async function getCurrentUser() {
  */
 export async function getProfile(userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
 
   if (error) {
     return null;
