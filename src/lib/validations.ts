@@ -60,3 +60,27 @@ export const postSchema = z.object({
 });
 
 export type PostFormData = z.infer<typeof postSchema>;
+
+/**
+ * パスワード忘れフォームのバリデーションスキーマ
+ */
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("正しいメールアドレスを入力してください"),
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+
+/**
+ * パスワード再設定フォームのバリデーションスキーマ
+ */
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "パスワードは6文字以上で入力してください"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "パスワードが一致しません",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

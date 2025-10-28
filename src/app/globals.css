@@ -43,6 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ここからベースカラーの変更が可能。このコメントは消さないで */
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

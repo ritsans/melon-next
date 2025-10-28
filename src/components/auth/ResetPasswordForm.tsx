@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -9,26 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signup } from "@/lib/auth";
-import { type SignupFormData, signupSchema } from "@/lib/validations";
+import { resetPassword } from "@/lib/auth";
+import { type ResetPasswordFormData, resetPasswordSchema } from "@/lib/validations";
 
 /**
- * サインアップフォームコンポーネント
+ * パスワード再設定フォームコンポーネント
  */
-export function SignupForm() {
+export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  const onSubmit = async (data: SignupFormData) => {
+  const onSubmit = async (data: ResetPasswordFormData) => {
     setError(null);
-    const result = await signup(data);
+    const result = await resetPassword(data);
     if (result?.error) {
       setError(result.error);
     }
@@ -37,29 +36,14 @@ export function SignupForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>新規登録</CardTitle>
-        <CardDescription>メールアドレスとパスワードでアカウントを作成してください</CardDescription>
+        <CardTitle>新しいパスワードの設定</CardTitle>
+        <CardDescription>新しいパスワードを入力してください</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-          {/* メールアドレス */}
-          <div>
-            <Label htmlFor="email">メールアドレス</Label>
-            <Input
-              id="email"
-              type="text"
-              autoComplete="email"
-              placeholder="example@email.com"
-              {...register("email")}
-              disabled={isSubmitting}
-              className="mt-2"
-            />
-            {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
-          </div>
-
           {/* パスワード */}
           <div>
-            <Label htmlFor="password">パスワード</Label>
+            <Label htmlFor="password">新しいパスワード</Label>
             <Input
               id="password"
               type="password"
@@ -84,24 +68,18 @@ export function SignupForm() {
               disabled={isSubmitting}
               className="mt-2"
             />
-            {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>
+            )}
           </div>
 
-          {/* サインアップボタン */}
+          {/* 再設定ボタン */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "登録中..." : "アカウントを作成"}
+            {isSubmitting ? "設定中..." : "パスワードを再設定"}
           </Button>
 
-          {/* 認証エラーメッセージ */}
+          {/* エラーメッセージ */}
           {error && <p className="text-center text-sm text-red-600">{error}</p>}
-
-          {/* ログインリンク */}
-          <p className="text-center text-sm text-gray-600">
-            すでにアカウントをお持ちの方は
-            <Link href="/login" className="text-blue-600 hover:underline ml-1">
-              ログイン
-            </Link>
-          </p>
         </form>
       </CardContent>
     </Card>
