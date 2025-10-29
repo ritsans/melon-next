@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 
-import type { LoginFormData, SignupFormData, ForgotPasswordFormData, ResetPasswordFormData } from "./validations";
+import type {
+  LoginFormData,
+  SignupFormData,
+  ForgotPasswordFormData,
+  ResetPasswordFormData,
+  OnboardingFormData,
+} from "./validations";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -116,4 +122,73 @@ export async function resetPassword(data: ResetPasswordFormData) {
   }
 
   redirect("/login");
+}
+
+/**
+ * ユーザー名の利用可能性チェック
+ * @param username - チェックするユーザー名
+ * @returns 利用可能な場合はtrue、既に使用されている場合はfalse
+ */
+export async function checkUsernameAvailability(username: string) {
+  const supabase = await createClient();
+
+  // 現在のユーザーを取得
+  const user = await getCurrentUser();
+
+  // ユーザー名の重複チェック
+  const query = supabase.from("profiles").select("username").eq("username", username);
+
+  // ログイン中のユーザーの場合は自分自身を除外
+  if (user) {
+    query.neq("id", user.id);
+  }
+
+  const { data } = await query.single();
+
+  return !data; // データがなければ利用可能
+}
+
+/**
+ * プロフィール更新処理（オンボーディング）
+ * @param data - オンボーディングフォームデータ
+ * @returns 成功時はnull、エラー時はエラーメッセージ
+ */
+export async function updateProfile(data: OnboardingFormData) {
+  const supabase = await createClient();
+
+  // 現在のユーザーを取得
+  const user = await getCurrentUser();
+  if (!user) {
+    return { error: "ログインしてください" };
+  }
+
+  // ユーザー名の重複チェック
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("username", data.username)
+    .neq("id", user.id)
+    .single();
+
+  if (existingProfile) {
+    return { error: "このユーザー名は既に使用されています" };
+  }
+
+  // プロフィールを更新
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({
+      id: user.id,
+      username: data.username,
+      display_name: data.display_name || null,
+      bio: data.bio || null,
+      interests: data.interests,
+      onboarding_completed: true,
+    });
+
+  if (error) {
+    return { error: "プロフィールの更新に失敗しました" };
+  }
+
+  redirect("/home");
 }
