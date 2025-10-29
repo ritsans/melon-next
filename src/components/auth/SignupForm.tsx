@@ -47,7 +47,7 @@ export function SignupForm() {
         />
       </CardContent>
       <div className="basis-3/5">
-        <CardHeader className="pt-6 px-8">
+        <CardHeader className="py-8 px-8">
           <CardTitle>新規登録</CardTitle>
           <CardDescription>メールアドレスとパスワードでアカウントを作成してください</CardDescription>
         </CardHeader>
@@ -93,7 +93,7 @@ export function SignupForm() {
                 placeholder="••••••••"
                 {...register("confirmPassword")}
                 disabled={isSubmitting}
-                className="mt-2"
+                className="mt-2 mb-2"
               />
               {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
             </div>

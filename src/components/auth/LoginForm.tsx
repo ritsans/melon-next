@@ -47,7 +47,7 @@ export function LoginForm() {
         />
       </CardContent>
       <div className="basis-3/5">
-        <CardHeader className="pt-6 px-8">
+        <CardHeader className="py-8 px-8">
           <CardTitle>ログイン</CardTitle>
           <CardDescription>メールアドレスとパスワードでログインしてください</CardDescription>
         </CardHeader>
@@ -83,7 +83,7 @@ export function LoginForm() {
                 placeholder="••••••••"
                 {...register("password")}
                 disabled={isSubmitting}
-                className="mt-2"
+                className="mt-2 mb-2"
               />
               {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
             </div>
