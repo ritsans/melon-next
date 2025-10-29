@@ -175,16 +175,14 @@ export async function updateProfile(data: OnboardingFormData) {
   }
 
   // プロフィールを更新
-  const { error } = await supabase
-    .from("profiles")
-    .upsert({
-      id: user.id,
-      username: data.username,
-      display_name: data.display_name || null,
-      bio: data.bio || null,
-      interests: data.interests,
-      onboarding_completed: true,
-    });
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id,
+    username: data.username,
+    display_name: data.display_name || null,
+    bio: data.bio || null,
+    interests: data.interests,
+    onboarding_completed: true,
+  });
 
   if (error) {
     return { error: "プロフィールの更新に失敗しました" };

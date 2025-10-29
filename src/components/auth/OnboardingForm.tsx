@@ -14,16 +14,7 @@ import { updateProfile, checkUsernameAvailability } from "@/lib/auth";
 import { type OnboardingFormData, onboardingSchema } from "@/lib/validations";
 
 // 興味のある分野の選択肢
-const INTEREST_OPTIONS = [
-  "技術",
-  "雑談",
-  "質問",
-  "ライフスタイル",
-  "趣味",
-  "学習",
-  "ビジネス",
-  "エンタメ",
-];
+const INTEREST_OPTIONS = ["技術", "雑談", "質問", "ライフスタイル", "趣味", "学習", "ビジネス", "エンタメ"];
 
 /**
  * オンボーディングフォームコンポーネント
@@ -47,9 +38,9 @@ export function OnboardingForm() {
   });
 
   // ユーザー名のリアルタイムチェック
-  useEffect(() => {
-    const username = watch("username");
+  const username = watch("username");
 
+  useEffect(() => {
     if (!username || username.length < 3) {
       setUsernameCheckState("idle");
       return;
@@ -68,7 +59,7 @@ export function OnboardingForm() {
     }, 500); // 500msのデバウンス
 
     return () => clearTimeout(timeoutId);
-  }, [watch("username"), errors.username]);
+  }, [username, errors.username]);
 
   const handleInterestToggle = (interest: string) => {
     const newInterests = selectedInterests.includes(interest)
@@ -111,15 +102,9 @@ export function OnboardingForm() {
                 className="mt-2 pr-10"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                {usernameCheckState === "checking" && (
-                  <span className="text-gray-400 text-sm">確認中...</span>
-                )}
-                {usernameCheckState === "available" && (
-                  <span className="text-green-600 text-lg">✓</span>
-                )}
-                {usernameCheckState === "taken" && (
-                  <span className="text-red-600 text-lg">✗</span>
-                )}
+                {usernameCheckState === "checking" && <span className="text-gray-400 text-sm">確認中...</span>}
+                {usernameCheckState === "available" && <span className="text-green-600 text-lg">✓</span>}
+                {usernameCheckState === "taken" && <span className="text-red-600 text-lg">✗</span>}
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">英数字とアンダースコアのみ、3〜20文字</p>
@@ -177,10 +162,7 @@ export function OnboardingForm() {
                     onCheckedChange={() => handleInterestToggle(interest)}
                     disabled={isSubmitting}
                   />
-                  <Label
-                    htmlFor={`interest-${interest}`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
+                  <Label htmlFor={`interest-${interest}`} className="text-sm font-normal cursor-pointer">
                     {interest}
                   </Label>
                 </div>
