@@ -47,6 +47,11 @@ export function SignupForm() {
         />
       </CardContent>
       <div className="basis-3/5">
+        <div className="px-3 pt-2">
+          <Link href="/" className="text-sm text-primary hover:underline">
+            Back
+          </Link>
+        </div>
         <CardHeader className="py-8 px-8">
           <CardTitle>新規登録</CardTitle>
           <CardDescription>メールアドレスとパスワードでアカウントを作成してください</CardDescription>
