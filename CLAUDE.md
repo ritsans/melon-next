@@ -10,6 +10,8 @@ A community-based content platform built with Next.js 16.0.0 and Supabase. It us
 
 Important documentation for this project is located in the `docs/` directory:
 
+Please be sure to read the following documentation before beginning any implementation.
+
  - **docs/requirements.md** : Contains the project requirements, business logic, and system constraints.
 
  - **docs/design.md**: Design document that includes technical design details such as architecture design, data models, and API specifications.

@@ -105,10 +105,10 @@ src/
 -- ハイブリッド方式：UUIDをプライマリキー、usernameをユーザー設定可能な識別子として使用
 CREATE TABLE profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY, -- システム内部ID（UUID）
-  username TEXT UNIQUE NOT NULL,                 -- ユーザー設定可能ID（URL用）
-  display_name TEXT,                             -- 表示名
-  bio TEXT,                                      -- 自己紹介
-  interests TEXT[],                              -- 興味のあることを配列で保存
+  username TEXT UNIQUE NOT NULL,                 -- ユーザー設定可能ID（URL用、3-20文字、英数字とアンダースコアのみ）
+  display_name TEXT,                             -- 表示名（15文字以下、省略可。省略時はusernameを表示）
+  bio TEXT,                                      -- 自己紹介（200文字以下）
+  interests TEXT[],                              -- 興味のあることを配列で保存（1-5個選択必須）
   avatar_url TEXT,                               -- プロフィール画像URL
   onboarding_completed BOOLEAN DEFAULT FALSE,    -- オンボーディング完了フラグ
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -166,6 +166,12 @@ export interface OnboardingData {
   display_name?: string;
   bio?: string;
   interests: string[];
+}
+
+// 表示名の取得ヘルパー
+// display_nameが未設定の場合はusernameを使用
+export const getDisplayName = (profile: Profile): string => {
+  return profile.display_name || profile.username;
 }
 
 // types/post.ts
