@@ -33,13 +33,15 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // セッションの更新（返り値は利用しないが、これによりクッキーが最新化される）
-  await supabase.auth.getUser();
+  // セッションの更新
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // 認証が必要なページへのアクセス制御（今後実装）
-  // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-  //   return NextResponse.redirect(new URL('/login', request.url))
-  // }
+  // 認証が必要なページへのアクセス制御
+  if (!user && request.nextUrl.pathname.startsWith("/home")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
   return supabaseResponse;
 }
