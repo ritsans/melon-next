@@ -28,7 +28,7 @@ export async function login(data: LoginFormData) {
     return { error: "メールアドレスまたはパスワードが正しくありません" };
   }
 
-  redirect("/");
+  redirect("/home");
 }
 
 /**
@@ -48,7 +48,7 @@ export async function signup(data: SignupFormData) {
     return { error: "アカウントの作成に失敗しました" };
   }
 
-  redirect("/");
+  redirect("/onboarding");
 }
 
 /**
