@@ -90,7 +90,7 @@ src/
 
 #### 2. 投稿関連コンポーネント
 - **PostCard**: 投稿内容、作成者、リアクション表示
-- **PostForm**: テキスト入力、タグ選択
+- **PostForm**: テキスト入力、タグ選択（画像アップロードは将来実装予定）
 - **PostList**: 投稿一覧の表示とページネーション
 
 #### 3. リアクションコンポーネント
@@ -116,6 +116,7 @@ CREATE TABLE profiles (
 );
 
 -- 投稿テーブル
+-- 注：image_url カラムは将来実装予定（現在はテキストのみ対応）
 CREATE TABLE posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
