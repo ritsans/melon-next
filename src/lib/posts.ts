@@ -6,7 +6,7 @@ export type PostWithProfile = {
   id: string;
   content: string;
   tag: string;
-  created_at: string;
+  created_at: string | null;
   user_id: string;
   profile: {
     username: string;

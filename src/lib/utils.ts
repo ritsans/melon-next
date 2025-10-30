@@ -7,10 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format a date to relative time in Japanese
- * @param date - Date string or Date object
+ * @param date - Date string, Date object, or null
  * @returns Relative time string (e.g., "3分前", "2時間前")
  */
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | null): string {
+  if (!date) {
+    return "不明";
+  }
+
   const now = new Date();
   const target = new Date(date);
   const diffInSeconds = Math.floor((now.getTime() - target.getTime()) / 1000);
