@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "format": "biome format .",
+    "format": "biome format --write src ",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

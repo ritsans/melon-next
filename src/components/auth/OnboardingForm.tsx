@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ export function OnboardingForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch,
+    control,
   } = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -38,28 +38,20 @@ export function OnboardingForm() {
   });
 
   // ユーザー名のリアルタイムチェック
-  const username = watch("username");
+  const username = useWatch({ control, name: "username" });
+  const canCheck = Boolean(username) && (username?.length ?? 0) >= 3 && !errors.username;
 
   useEffect(() => {
-    if (!username || username.length < 3) {
-      setUsernameCheckState("idle");
-      return;
-    }
-
-    // バリデーションエラーがある場合はチェックしない
-    if (errors.username) {
-      setUsernameCheckState("idle");
-      return;
-    }
+    if (!canCheck) return;
 
     const timeoutId = setTimeout(async () => {
       setUsernameCheckState("checking");
-      const isAvailable = await checkUsernameAvailability(username);
+      const isAvailable = await checkUsernameAvailability(username as string);
       setUsernameCheckState(isAvailable ? "available" : "taken");
     }, 500); // 500msのデバウンス
 
     return () => clearTimeout(timeoutId);
-  }, [username, errors.username]);
+  }, [canCheck, username]);
 
   const handleInterestToggle = (interest: string) => {
     const newInterests = selectedInterests.includes(interest)
@@ -102,17 +94,19 @@ export function OnboardingForm() {
                 className="mt-2 pr-10"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                {usernameCheckState === "checking" && <span className="text-gray-400 text-sm">確認中...</span>}
-                {usernameCheckState === "available" && <span className="text-green-600 text-lg">✓</span>}
-                {usernameCheckState === "taken" && <span className="text-red-600 text-lg">✗</span>}
+                {canCheck && usernameCheckState === "checking" && (
+                  <span className="text-gray-400 text-sm">確認中...</span>
+                )}
+                {canCheck && usernameCheckState === "available" && <span className="text-green-600 text-lg">✓</span>}
+                {canCheck && usernameCheckState === "taken" && <span className="text-red-600 text-lg">✗</span>}
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">英数字とアンダースコアのみ、3〜20文字</p>
             {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
-            {usernameCheckState === "taken" && !errors.username && (
+            {canCheck && usernameCheckState === "taken" && !errors.username && (
               <p className="text-sm text-red-600 mt-1">このユーザー名は既に使用されています</p>
             )}
-            {usernameCheckState === "available" && (
+            {canCheck && usernameCheckState === "available" && (
               <p className="text-sm text-green-600 mt-1">このユーザー名は利用可能です</p>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { postSchema } from "@/lib/validations";
 import type { z } from "zod";
@@ -30,7 +30,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
     handleSubmit,
     formState: { errors },
     reset,
-    watch,
+    control,
     setValue,
   } = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -40,9 +40,9 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
     },
   });
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" }) ?? "";
   const contentLength = content?.length || 0;
-  const selectedTags = watch("tags");
+  const selectedTags = useWatch({ control, name: "tags" }) ?? [];
 
   const toggleTag = (tagValue: string) => {
     const currentTags = selectedTags || [];
@@ -101,12 +101,8 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
           className="resize-none"
         />
         <div className="flex items-center justify-between">
-          <div>
-            {errors.content && <p className="text-sm text-red-600">{errors.content.message}</p>}
-          </div>
-          <p className="text-sm text-neutral-500">
-            {contentLength} / 500
-          </p>
+          <div>{errors.content && <p className="text-sm text-red-600">{errors.content.message}</p>}</div>
+          <p className="text-sm text-neutral-500">{contentLength} / 500</p>
         </div>
       </div>
 
