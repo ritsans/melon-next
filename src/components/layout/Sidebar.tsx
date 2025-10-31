@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { CreatePostButton } from "@/components/posts/CreatePostButton";
 
 // 固定タグリスト
 const TAGS = [
@@ -20,11 +21,7 @@ export async function Sidebar() {
       {/* 投稿作成ボタン（ログイン時のみ） */}
       {user && (
         <div className="mb-6">
-          <Link href="/posts/new">
-            <Button className="w-full" size="lg">
-              投稿する
-            </Button>
-          </Link>
+          <CreatePostButton />
         </div>
       )}
 

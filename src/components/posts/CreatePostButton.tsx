@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { PostForm } from "./PostForm";
 import { createPost } from "@/lib/posts";
+import type { PostFormData } from "@/lib/validations";
 import { PenSquare } from "lucide-react";
 
 export function CreatePostButton() {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = async (data: { content: string; tag: string }) => {
+  const handleSubmit = async (data: PostFormData) => {
     const result = await createPost(data);
     if (result.success) {
       setOpen(false);

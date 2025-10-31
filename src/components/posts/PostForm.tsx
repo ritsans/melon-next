@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
+import { PRESET_TAGS, normalizeTag } from "@/lib/tags";
 
 type PostFormData = z.infer<typeof postSchema>;
 
@@ -17,14 +18,6 @@ type PostFormProps = {
   onSubmit: (data: PostFormData) => Promise<{ success: boolean; error?: string }>;
   onCancel?: () => void;
 };
-
-const PRESET_TAGS = [
-  { value: "general", label: "一般" },
-  { value: "question", label: "質問" },
-  { value: "chat", label: "雑談" },
-  { value: "illustration", label: "イラスト" },
-  { value: "progress", label: "進捗" },
-] as const;
 
 export function PostForm({ onSubmit, onCancel }: PostFormProps) {
   const [isPending, startTransition] = useTransition();
@@ -64,8 +57,9 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
   };
 
   const addCustomTag = () => {
-    if (customTag.trim() && !selectedTags.includes(customTag.trim())) {
-      setValue("tags", [...selectedTags, customTag.trim()]);
+    const normalized = normalizeTag(customTag);
+    if (normalized && !selectedTags.includes(normalized)) {
+      setValue("tags", [...selectedTags, normalized]);
       setCustomTag("");
       setShowCustomInput(false);
     }

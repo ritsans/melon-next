@@ -3,15 +3,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRelativeTime } from "@/lib/utils";
 import type { PostWithProfile } from "@/lib/posts";
+import { tagLabel } from "@/lib/tags";
 
 type PostCardProps = {
   post: PostWithProfile;
-};
-
-const TAG_LABELS: Record<string, string> = {
-  general: "一般",
-  question: "質問",
-  chat: "雑談",
 };
 
 export function PostCard({ post }: PostCardProps) {
@@ -49,7 +44,7 @@ export function PostCard({ post }: PostCardProps) {
             <div className="flex items-center gap-2">
               {post.tags.map((tag) => (
                 <Link key={tag} href={`/tags/${tag}`} className="text-sm font-medium text-blue-600 hover:underline">
-                  #{TAG_LABELS[tag] || tag}
+                  #{tagLabel(tag)}
                 </Link>
               ))}
             </div>
