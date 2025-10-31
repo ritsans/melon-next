@@ -1,41 +1,25 @@
-import { getPosts, type PostWithProfile } from "@/lib/posts";
+import { getPosts } from "@/lib/posts";
 import { PostCard } from "@/components/posts/PostCard";
-
-// サンプルデータ（確認用、後で削除予定）
-const samplePost: PostWithProfile = {
-  id: "sample-id-123",
-  content: "これはサンプル投稿です。\n\nMelonへようこそ！投稿機能を実装したら、実際の投稿が表示されます。",
-  tag: "general",
-  created_at: "2025-10-30T04:00:00.000Z", // 固定日時
-  user_id: "sample-user-id",
-  profile: {
-    username: "sample_user",
-    display_name: "サンプルユーザー",
-    avatar_url: null,
-  },
-};
+import { CreatePostButton } from "@/components/posts/CreatePostButton";
 
 export default async function HomePage() {
   const posts = await getPosts();
 
-  // 確認用: DBに投稿があれば最初の1件、なければサンプルを表示
-  const displayPost = posts.length > 0 ? posts[0] : samplePost;
-
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-bold text-neutral-900">ホーム</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-neutral-900">ホーム</h1>
+        <CreatePostButton />
+      </div>
 
       <div className="space-y-4">
-        <PostCard post={displayPost} />
-        {posts.length === 0 && (
-          <p className="text-center text-sm text-neutral-500">
-            （サンプル投稿を表示中。投稿機能実装後に実際のデータが表示されます）
-          </p>
-        )}
-        {posts.length > 1 && (
-          <p className="text-center text-sm text-neutral-500">
-            （確認用: 最初の1件のみ表示中。残り {posts.length - 1} 件）
-          </p>
+        {posts.length === 0 ? (
+          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
+            <p className="text-neutral-600">まだ投稿がありません</p>
+            <p className="mt-2 text-sm text-neutral-500">最初の投稿をしてみましょう！</p>
+          </div>
+        ) : (
+          posts.map((post) => <PostCard key={post.id} post={post} />)
         )}
       </div>
     </div>

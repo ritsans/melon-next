@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { postSchema } from "@/lib/validations";
+import { revalidatePath } from "next/cache";
 
 export type PostWithProfile = {
   id: string;
@@ -52,4 +55,45 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
     })) || []
   );
+}
+
+/**
+ * Create a new post
+ * @param formData - Post content and tag
+ * @returns Success status and error message if any
+ */
+export async function createPost(formData: { content: string; tag: string }) {
+  try {
+    // Validate form data
+    const validatedData = postSchema.parse(formData);
+
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // Insert post
+    const { error } = await supabase.from("posts").insert({
+      content: validatedData.content,
+      tag: validatedData.tag,
+      user_id: user.id,
+    });
+
+    if (error) {
+      console.error("Error creating post:", error);
+      return { success: false, error: "投稿の作成に失敗しました" };
+    }
+
+    // Revalidate home page to show new post
+    revalidatePath("/home");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in createPost:", error);
+    return { success: false, error: "投稿の作成に失敗しました" };
+  }
 }
