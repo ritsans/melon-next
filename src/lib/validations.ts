@@ -50,7 +50,7 @@ export type OnboardingFormData = z.infer<typeof onboardingSchema>;
  */
 export const postSchema = z.object({
   content: z.string().min(1, "投稿内容を入力してください").max(500, "投稿は500文字以下で入力してください"),
-  tag: z.string().min(1, "タグを選択してください"),
+  tags: z.array(z.string()).min(1, "タグを1つ以上選択してください").max(5, "タグは5つまで選択可能です"),
 });
 
 export type PostFormData = z.infer<typeof postSchema>;

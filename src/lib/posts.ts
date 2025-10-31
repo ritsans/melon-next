@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 export type PostWithProfile = {
   id: string;
   content: string;
-  tag: string;
+  tags: string[];
   created_at: string | null;
   user_id: string;
   profile: {
@@ -31,7 +31,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       `
       id,
       content,
-      tag,
+      tags,
       created_at,
       user_id,
       profile:profiles(username, display_name, avatar_url)
@@ -49,7 +49,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
     data?.map((post) => ({
       id: post.id,
       content: post.content,
-      tag: post.tag,
+      tags: post.tags,
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
@@ -59,10 +59,10 @@ export async function getPosts(): Promise<PostWithProfile[]> {
 
 /**
  * Create a new post
- * @param formData - Post content and tag
+ * @param formData - Post content and tags
  * @returns Success status and error message if any
  */
-export async function createPost(formData: { content: string; tag: string }) {
+export async function createPost(formData: { content: string; tags: string[] }) {
   try {
     // Validate form data
     const validatedData = postSchema.parse(formData);
@@ -79,7 +79,7 @@ export async function createPost(formData: { content: string; tag: string }) {
     // Insert post
     const { error } = await supabase.from("posts").insert({
       content: validatedData.content,
-      tag: validatedData.tag,
+      tags: validatedData.tags,
       user_id: user.id,
     });
 

@@ -36,7 +36,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
     resolver: zodResolver(postSchema),
     defaultValues: {
       content: "",
-      tag: "general",
+      tags: [],
     },
   });
 
@@ -81,22 +81,22 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
 
       {/* Tag Selection */}
       <div className="space-y-2">
-        <Label htmlFor="tag">タグ</Label>
-        <div className="flex gap-3">
+        <Label htmlFor="tags">タグ（複数選択可）</Label>
+        <div className="flex flex-wrap gap-3">
           {TAGS.map((tag) => (
             <label key={tag.value} className="flex cursor-pointer items-center gap-2">
               <input
-                type="radio"
+                type="checkbox"
                 value={tag.value}
-                {...register("tag")}
+                {...register("tags")}
                 disabled={isPending}
-                className="h-4 w-4 border-neutral-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
               />
               <span className="text-sm text-neutral-700">{tag.label}</span>
             </label>
           ))}
         </div>
-        {errors.tag && <p className="text-sm text-red-600">{errors.tag.message}</p>}
+        {errors.tags && <p className="text-sm text-red-600">{errors.tags.message}</p>}
       </div>
 
       {/* Error Message */}

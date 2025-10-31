@@ -8,6 +8,12 @@ type PostCardProps = {
   post: PostWithProfile;
 };
 
+const TAG_LABELS: Record<string, string> = {
+  general: "一般",
+  question: "質問",
+  chat: "雑談",
+};
+
 export function PostCard({ post }: PostCardProps) {
   const displayName = post.profile.display_name || post.profile.username;
 
@@ -39,11 +45,13 @@ export function PostCard({ post }: PostCardProps) {
               <span className="text-sm text-neutral-500">{formatRelativeTime(post.created_at)}</span>
             </div>
 
-            {/* Tag */}
+            {/* Tags */}
             <div className="flex items-center gap-2">
-              <Link href={`/tags/${post.tag}`} className="text-sm font-medium text-blue-600 hover:underline">
-                #{post.tag}
-              </Link>
+              {post.tags.map((tag) => (
+                <Link key={tag} href={`/tags/${tag}`} className="text-sm font-medium text-blue-600 hover:underline">
+                  #{TAG_LABELS[tag] || tag}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
