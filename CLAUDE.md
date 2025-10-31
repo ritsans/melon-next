@@ -8,17 +8,16 @@ A community-based content platform built with Next.js 16.0.0 and Supabase. It us
 
 ## Project Documentation
 
-Important documentation for this project is located in the `docs/` directory:
+This document serves as a guide for contributors working on this project.
+All essential documentation for this project is located in the docs/ directory.
 
-Please be sure to read the following documentation before beginning any implementation.
+Before starting any implementation work or performing any project-related tasks, please make sure to review and fully understand the following files:
 
- - **docs/requirements.md** : Contains the project requirements, business logic, and system constraints.
+ - **docs/requirements.md** — Defines the project requirements, business logic, and system constraints.
 
- - **docs/design.md**: Design document that includes technical design details such as architecture design, data models, and API specifications.
+ - **docs/design.md** — Provides detailed technical design information, including system architecture, data models, and API specifications.
 
- - **docs/tasks.md**: Task list that tracks planned features, tasks in progress, and completed tasks.
-
-Refer to these documents whenever implementing a new feature or reviewing existing code.
+ - **docs/tasks.md** — Lists planned features, ongoing tasks, and completed work for project tracking.
 
 ## Development Commands
 
