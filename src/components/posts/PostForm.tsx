@@ -122,7 +122,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
                   type="button"
                   onClick={() => removeTag(tag)}
                   disabled={isPending}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 disabled:opacity-50"
                 >
                   {label}
                   <X className="h-3 w-3" />
@@ -142,7 +142,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
                 type="button"
                 onClick={() => toggleTag(tag.value)}
                 disabled={isPending}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                   isSelected
                     ? "border-blue-600 bg-blue-50 text-blue-700"
                     : "border-neutral-300 bg-white text-neutral-700 hover:border-blue-400 hover:bg-blue-50"
@@ -159,7 +159,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
               type="button"
               onClick={() => setShowCustomInput(true)}
               disabled={isPending}
-              className="inline-flex items-center gap-1 rounded-full border border-dashed border-neutral-400 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-neutral-400 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               新しいタグを入力
