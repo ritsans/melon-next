@@ -1,9 +1,11 @@
 import { getPosts } from "@/lib/posts";
 import { PostCard } from "@/components/posts/PostCard";
 import { CreatePostButton } from "@/components/posts/CreatePostButton";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function HomePage() {
   const posts = await getPosts();
+  const user = await getCurrentUser();
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -19,7 +21,7 @@ export default async function HomePage() {
             <p className="mt-2 text-sm text-neutral-500">最初の投稿をしてみましょう！</p>
           </div>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          posts.map((post) => <PostCard key={post.id} post={post} currentUserId={user?.id} />)
         )}
       </div>
     </div>

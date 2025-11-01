@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { postSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
+import type { Reaction } from "@/lib/reactions";
 
 export type PostWithProfile = {
   id: string;
@@ -16,6 +17,7 @@ export type PostWithProfile = {
     display_name: string | null;
     avatar_url: string | null;
   };
+  reactions: Reaction[];
 };
 
 /**
@@ -34,7 +36,8 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       tags,
       created_at,
       user_id,
-      profile:profiles(username, display_name, avatar_url)
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
     `,
     )
     .order("created_at", { ascending: false });
@@ -53,6 +56,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
+      reactions: post.reactions || [],
     })) || []
   );
 }

@@ -4,17 +4,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRelativeTime } from "@/lib/utils";
 import type { PostWithProfile } from "@/lib/posts";
 import { tagLabel } from "@/lib/tags";
+import { ReactionPanel } from "@/components/reactions/ReactionPanel";
 
 type PostCardProps = {
   post: PostWithProfile;
+  currentUserId?: string;
 };
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, currentUserId }: PostCardProps) {
   const displayName = post.profile.display_name || post.profile.username;
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex gap-3">
           {/* User Avatar */}
           <Link href={`/profile/${post.profile.username}`} className="shrink-0">
@@ -54,8 +56,11 @@ export function PostCard({ post }: PostCardProps) {
 
       <CardContent className="pt-0">
         {/* Post Content - offset to align with user info */}
-        <div className="ml-[52px]">
+        <div className="ml-[52px] space-y-4">
           <p className="whitespace-pre-wrap wrap-break-word text-neutral-900">{post.content}</p>
+
+          {/* Reactions */}
+          <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} />
         </div>
       </CardContent>
     </Card>
