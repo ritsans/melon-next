@@ -25,7 +25,7 @@ Before starting any implementation work or performing any project-related tasks,
 ```bash
 pnpm dev
 ```
-開発サーバーは http://localhost:3000 で起動します。
+開発サーバーは http://localhost:3000 で起動します。Turbopack を使用して高速にビルドされます。
 
 ### ビルド
 ```bash
@@ -53,6 +53,12 @@ pnpm format
 ```
 Biome を使用してコード全体を自動フォーマットします。
 
+### 型チェック
+```bash
+pnpm type-check
+```
+TypeScript のコンパイルエラーをチェックします（ビルドせずに型のみ検証）。
+
 ## Code Architecture
 
 ### ディレクトリ構造
@@ -60,22 +66,49 @@ Biome を使用してコード全体を自動フォーマットします。
   - `layout.tsx`: グローバルレイアウト(Geist フォントの設定を含む)
   - `page.tsx`: トップページコンポーネント
   - `globals.css`: Tailwind CSS のグローバルスタイル
-  - `(auth)/`: 認証関連のページグループ
+  - `(auth)/`: 認証関連のページグループ（ルートグループ、URL には含まれない）
     - `login/page.tsx`: ログインページ
     - `signup/page.tsx`: サインアップページ
+    - `onboarding/page.tsx`: 初回登録後のプロフィール設定ページ
+    - `forgot-password/page.tsx`: パスワードリセット依頼ページ
+    - `reset-password/page.tsx`: パスワード再設定ページ
+  - `(main)/`: メインコンテンツのページグループ（ルートグループ、URL には含まれない）
+    - `layout.tsx`: メインレイアウト（Header + Sidebar 構成）
+    - `home/page.tsx`: ホームフィード（投稿一覧表示）
+  - `api/`: API ルート
+    - `test-db/route.ts`: データベース接続テスト用 API
 - **`src/lib/`**: 共通ユーティリティ関数とヘルパー
   - `utils.ts`: `cn()` 関数 - clsx と tailwind-merge を組み合わせた Tailwind CSS のクラス名マージユーティリティ
   - `validations.ts`: Zod バリデーションスキーマ定義（ログイン、サインアップ、投稿フォームなど）
   - `auth.ts`: 認証ヘルパー関数（login, signup, logout, getCurrentUser, getProfile）
+  - `posts.ts`: 投稿関連のロジック（createPost, getPosts）
+  - `reactions.ts`: リアクション機能のロジック（toggleReaction）
+  - `tags.ts`: タグ正規化とプリセットタグ管理（normalizeTag, PRESET_TAGS, TAG_LABELS, tagLabel）
+  - `reaction-utils.ts`: リアクション表示用のユーティリティ関数
   - `supabase/`: Supabase クライアント設定
     - `client.ts`: クライアントサイド用 Supabase クライアント
     - `server.ts`: サーバーサイド用 Supabase クライアント
     - `database.types.ts`: データベース型定義（Supabase CLI で自動生成）
 - **`src/components/`**: React コンポーネント
-  - `ui/`: shadcn/ui コンポーネント（button, input, label, card など）
+  - `ui/`: shadcn/ui コンポーネント（button, input, label, card, dialog, avatar, dropdown-menu など）
   - `auth/`: 認証関連コンポーネント
     - `LoginForm.tsx`: ログインフォーム
     - `SignupForm.tsx`: サインアップフォーム
+    - `OnboardingForm.tsx`: オンボーディングフォーム
+    - `ForgotPasswordForm.tsx`: パスワードリセット依頼フォーム
+    - `ResetPasswordForm.tsx`: パスワード再設定フォーム
+  - `layout/`: レイアウトコンポーネント
+    - `Header.tsx`: グローバルヘッダー（ユーザードロップダウンメニュー含む）
+    - `Sidebar.tsx`: サイドバーナビゲーション（タグフィルター機能含む）
+  - `posts/`: 投稿関連コンポーネント
+    - `PostCard.tsx`: 投稿カード表示コンポーネント
+    - `PostForm.tsx`: 投稿作成・編集フォーム
+    - `CreatePostButton.tsx`: 投稿作成ボタン＆モーダル制御
+  - `reactions/`: リアクション関連コンポーネント
+    - `ReactionButton.tsx`: 個別リアクションボタン
+    - `ReactionPanel.tsx`: リアクションパネル（複数リアクションボタンのグループ）
+- **`src/proxy.ts`**: Next.js 16 の Proxy（従来の middleware.ts に相当）
+  - 認証セッション管理とルートアクセス制御
 - **`supabase/migrations/`**: データベースマイグレーションファイル
   - `20250927000000_initial_schema.sql`: 初期スキーマ（profiles, posts, reactions, tags テーブル）
 
@@ -100,6 +133,86 @@ import useCustomHook from "@/hooks/useCustomHook";
 - **Dark Mode非対応**: ダークモードは使用しません。常にライトモードを使用
 
 新しい UI コンポーネントを追加する場合は、shadcn/ui CLI (e.g `pnpm dlx shadcn@latest add button`) を使用してください。
+
+### アーキテクチャパターン
+
+#### ルートグループによる構造化
+- `(auth)/`: 認証フロー専用ページ（シンプルなレイアウト）
+- `(main)/`: メインアプリケーション（Header + Sidebar レイアウト）
+- ルートグループは URL には影響せず、論理的な整理とレイアウト分離に使用
+
+#### データフェッチングパターン
+- **Server Components**: デフォルトで Server Components を使用し、サーバーサイドでデータフェッチ
+  - `getPosts()`, `getCurrentUser()` などを直接コンポーネント内で await
+- **Server Actions**: フォーム送信やデータ変更には Server Actions を使用
+  - `createPost()`, `toggleReaction()`, `login()`, `signup()` など
+  - `"use server"` ディレクティブで定義し、クライアントから直接呼び出し可能
+- **Client Components**: ユーザーインタラクション（フォーム、モーダル、リアクションボタン）のみ Client Components
+  - `"use client"` ディレクティブで明示
+
+#### 認証とセッション管理
+- `src/proxy.ts` で全リクエストの認証セッションを管理
+- 認証が必要なページ（`/home` など）へのアクセスは自動的にリダイレクト
+- Supabase SSR パッケージ (`@supabase/ssr`) を使用し、Cookie ベースのセッション管理
+
+#### リアクションシステムの設計
+- 投稿ごとにユーザーは複数種類のリアクション（👏、💖、🤣）を付けられる
+- 同じリアクションは 1 回のみ（トグル式）、異なるリアクションは同時に付与可能
+- リアクション数の集計とユーザーの既存リアクション取得はサーバーサイドで実行
+- `toggleReaction()` Server Action でリアクションの追加・削除を処理
+
+#### タグシステムの設計
+- プリセットタグ（`PRESET_TAGS`）と カスタムタグ の両方をサポート
+- タグは正規化（`normalizeTag()`）により、大文字小文字やスペースを統一
+- `TAG_LABELS` でタグの日本語表示ラベルを管理
+- 投稿には複数のタグを付与可能（`posts_tags` 中間テーブルで多対多関係）
+- Sidebar でタグフィルタリング機能を提供
+
+## Working with React Server Components
+
+このプロジェクトは Next.js 16 の React Server Components (RSC) を積極的に活用しています。
+
+### 重要な原則
+
+1. **デフォルトは Server Components**: 全てのコンポーネントはデフォルトで Server Components
+   - データフェッチは直接 async/await で記述
+   - クライアントでの JavaScript 実行が不要なものは Server Components のまま保つ
+
+2. **Client Components の使用は最小限に**: `"use client"` は必要な場合のみ
+   - フォーム、モーダル、ボタンなどのインタラクティブ要素
+   - `useState`, `useEffect` などの React Hooks を使用する場合
+   - ブラウザ API（`window`, `document` など）を使用する場合
+
+3. **Server Actions の活用**: データ変更には Server Actions を使用
+   - `"use server"` ディレクティブで定義
+   - Client Components から直接呼び出し可能
+   - フォーム送信、データ作成・更新・削除に使用
+
+### 実装例
+
+**Server Component でのデータフェッチ:**
+```typescript
+// src/app/(main)/home/page.tsx
+export default async function HomePage() {
+  const posts = await getPosts(); // 直接サーバーサイドでフェッチ
+  const user = await getCurrentUser();
+  return <PostCard post={post} />;
+}
+```
+
+**Client Component での Server Action 呼び出し:**
+```typescript
+// src/components/posts/CreatePostButton.tsx
+"use client";
+import { createPost } from "@/lib/posts";
+
+export function CreatePostButton() {
+  const handleSubmit = async (data) => {
+    await createPost(data); // Server Action を呼び出し
+  };
+  return <form onSubmit={handleSubmit}>...</form>;
+}
+```
 
 ## Code Style
 
@@ -155,9 +268,13 @@ Biome はフォーマットのみに使用され、Lint は無効(ESLint を使�
 ### 認証フロー
 
 1. **サインアップ**: `/signup` でメールアドレスとパスワードを登録
-2. **ログイン**: `/login` でメールアドレスとパスワードでログイン
-3. **オンボーディング**: 初回登録後にユーザー名とプロフィール情報を設定（今後実装予定）
-4. **セッション管理**: Supabase が Cookie ベースのセッション管理を自動処理
+2. **オンボーディング**: `/onboarding` で初回登録後にユーザー名とプロフィール情報、興味タグを設定
+3. **ログイン**: `/login` でメールアドレスとパスワードでログイン
+4. **パスワードリセット**:
+   - `/forgot-password` でパスワードリセット依頼
+   - `/reset-password` でパスワード再設定
+5. **セッション管理**: Supabase が Cookie ベースのセッション管理を自動処理
+6. **アクセス制御**: `src/proxy.ts` で未認証ユーザーの `/home` アクセスをブロック
 
 ### 認証関連ファイル
 
