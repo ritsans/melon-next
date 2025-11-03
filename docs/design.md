@@ -89,9 +89,12 @@ src/
 - **Sidebar**: 固定タグリスト、投稿作成ボタン
 
 #### 2. 投稿関連コンポーネント
-- **PostCard**: 投稿内容、作成者、リアクション表示
-- **PostForm**: テキスト入力、タグ選択（画像アップロードは将来実装予定）
+- **PostCard**: 投稿内容、作成者、リアクション表示、画像グリッド表示（将来実装予定）
+- **PostForm**: テキスト入力、タグ選択、画像アップロード機能（将来実装予定）
 - **PostList**: 投稿一覧の表示とページネーション
+- **ImageUploader**: 画像アップロード・プレビューコンポーネント（将来実装予定）
+- **ImageGallery**: 投稿内画像のグリッド表示コンポーネント（将来実装予定）
+- **ImageLightbox**: 画像拡大表示モーダルコンポーネント（将来実装予定）
 
 #### 3. リアクションコンポーネント
 - **ReactionPanel**: 絵文字リアクション、カウント表示
@@ -116,12 +119,13 @@ CREATE TABLE profiles (
 );
 
 -- 投稿テーブル
--- 注：image_url カラムは将来実装予定（現在はテキストのみ対応）
+-- 注：image_urls カラムは将来実装予定（現在はテキストのみ対応）
 CREATE TABLE posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
   tag TEXT NOT NULL,
+  image_urls JSONB,  -- 将来実装予定: 画像URLの配列 (例: ["url1", "url2"])
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -181,6 +185,7 @@ export interface Post {
   user_id: string;
   content: string;
   tag: string;
+  image_urls?: string[];  // 将来実装予定: 画像URLの配列
   created_at: string;
   updated_at: string;
   profiles: Profile;
@@ -242,7 +247,8 @@ const { data, error } = await supabase
   .insert({
     content: 'Hello World!',
     tag: 'general',
-    user_id: user.id
+    user_id: user.id,
+    image_urls: [] // 将来実装予定: 画像URLの配列
   });
 
 // 投稿一覧取得
@@ -254,6 +260,38 @@ const { data, error } = await supabase
     reactions(emoji, user_id)
   `)
   .order('created_at', { ascending: false });
+
+// 画像アップロードAPI（将来実装予定）
+// Supabase Storageへのアップロード
+const uploadImage = async (file: File, postId: string) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${postId}/${Date.now()}.${fileExt}`;
+
+  const { data, error } = await supabase.storage
+    .from('post-images')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (error) throw error;
+
+  // 公開URLを取得
+  const { data: { publicUrl } } = supabase.storage
+    .from('post-images')
+    .getPublicUrl(fileName);
+
+  return publicUrl;
+};
+
+// 画像削除API（将来実装予定）
+const deleteImage = async (imagePath: string) => {
+  const { error } = await supabase.storage
+    .from('post-images')
+    .remove([imagePath]);
+
+  if (error) throw error;
+};
 ```
 
 #### 3. リアクションAPI
@@ -395,7 +433,22 @@ export const postSchema = z.object({
     .string()
     .min(1, '投稿内容を入力してください')
     .max(500, '投稿は500文字以下で入力してください'),
-  tag: z.string().min(1, 'タグを選択してください')
+  tag: z.string().min(1, 'タグを選択してください'),
+  // 将来実装予定: 画像バリデーション
+  images: z
+    .array(z.instanceof(File))
+    .max(4, '画像は最大4枚までアップロード可能です')
+    .refine(
+      (files) => files.every((file) => file.size <= 5 * 1024 * 1024),
+      '各画像は5MB以下である必要があります'
+    )
+    .refine(
+      (files) => files.every((file) =>
+        ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+      ),
+      'JPEG、PNG、GIF、WebP形式の画像のみアップロード可能です'
+    )
+    .optional()
 });
 
 // ログインフォームスキーマ
