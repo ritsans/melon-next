@@ -62,6 +62,49 @@ export async function getPosts(): Promise<PostWithProfile[]> {
 }
 
 /**
+ * Get posts filtered by tag, ordered by creation date (newest first)
+ * @param tag - Tag to filter by
+ * @returns Array of posts with the specified tag
+ */
+export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
+    `,
+    )
+    .contains("tags", [tag])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching posts by tag:", error);
+    return [];
+  }
+
+  // Transform the data to match our type
+  return (
+    data?.map((post) => ({
+      id: post.id,
+      content: post.content,
+      tags: post.tags,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
+      reactions: post.reactions || [],
+    })) || []
+  );
+}
+
+/**
  * Create a new post
  * @param formData - Post content and tags
  * @returns Success status and error message if any
