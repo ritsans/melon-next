@@ -16,6 +16,17 @@ export async function Sidebar() {
         </div>
       )}
 
+      {/* ナビゲーション */}
+      <nav className="mb-6 space-y-1">
+        <Link
+          href="/home"
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+        >
+          <span>🏠</span>
+          <span>ホーム</span>
+        </Link>
+      </nav>
+
       {/* タグリスト */}
       <Card className="p-4">
         <h2 className="mb-4 text-lg font-semibold text-neutral-900">タグ</h2>
@@ -29,6 +40,11 @@ export async function Sidebar() {
               #{tag.label}
             </Link>
           ))}
+        </nav>
+      </Card>
+    </aside>
+  );
+}
         </nav>
       </Card>
     </aside>

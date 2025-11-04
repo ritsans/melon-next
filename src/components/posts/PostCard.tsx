@@ -1,10 +1,22 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatRelativeTime } from "@/lib/utils";
 import type { PostWithProfile } from "@/lib/posts";
 import { tagLabel } from "@/lib/tags";
 import { ReactionPanel } from "@/components/reactions/ReactionPanel";
+import { DeletePostDialog } from "./DeletePostDialog";
+import { MoreVertical, Trash2 } from "lucide-react";
 
 type PostCardProps = {
   post: PostWithProfile;
@@ -12,7 +24,9 @@ type PostCardProps = {
 };
 
 export function PostCard({ post, currentUserId }: PostCardProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const displayName = post.profile.display_name || post.profile.username;
+  const isOwnPost = currentUserId === post.user_id;
 
   return (
     <Card className="w-full">
@@ -51,8 +65,31 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
               ))}
             </div>
           </div>
+
+          {/* Post Options Menu (only for own posts) */}
+          {isOwnPost && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">投稿メニューを開く</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  投稿を削除
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
+
+      <DeletePostDialog postId={post.id} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} />
 
       <CardContent className="pt-0">
         {/* Post Content - offset to align with user info */}

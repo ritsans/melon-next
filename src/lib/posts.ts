@@ -144,3 +144,37 @@ export async function createPost(formData: { content: string; tags: string[] }) 
     return { success: false, error: "投稿の作成に失敗しました" };
   }
 }
+
+/**
+ * Delete a post
+ * @param postId - ID of the post to delete
+ * @returns Success status and error message if any
+ */
+export async function deletePost(postId: string) {
+  try {
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // Delete post (RLS policy ensures user can only delete their own posts)
+    const { error } = await supabase.from("posts").delete().eq("id", postId);
+
+    if (error) {
+      console.error("Error deleting post:", error);
+      return { success: false, error: "投稿の削除に失敗しました" };
+    }
+
+    // Revalidate paths to update UI
+    revalidatePath("/home");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deletePost:", error);
+    return { success: false, error: "投稿の削除に失敗しました" };
+  }
+}
