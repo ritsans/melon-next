@@ -55,6 +55,9 @@ src/
 │   ├── layout/
 │   │   ├── Header.tsx             # ヘッダーナビゲーション
 │   │   └── Sidebar.tsx            # サイドバー（タグ一覧）
+│   ├── notifications/
+│   │   ├── NotificationBell.tsx   # 通知ベルアイコンと未読バッジ
+│   │   └── NotificationDropdown.tsx # 通知一覧ドロップダウン
 │   ├── posts/
 │   │   ├── PostCard.tsx           # 投稿カード
 │   │   ├── PostForm.tsx           # 投稿作成フォーム
@@ -85,8 +88,10 @@ src/
 ### 主要コンポーネント
 
 #### 1. レイアウトコンポーネント
-- **Header**: ログイン状態表示、ナビゲーション
+- **Header**: ログイン状態表示、ナビゲーション、通知ベルアイコン
 - **Sidebar**: 固定タグリスト、投稿作成ボタン
+- **NotificationBell**: 通知ベルアイコン、未読通知数バッジ
+- **NotificationDropdown**: 通知一覧表示、既読/未読管理
 
 #### 2. 投稿関連コンポーネント
 - **PostCard**: 投稿内容、作成者、リアクション表示、画像グリッド表示（将来実装予定）
@@ -148,6 +153,18 @@ CREATE TABLE tags (
   description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 通知テーブル
+CREATE TABLE notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,  -- 通知を受け取るユーザー
+  actor_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL, -- 通知を発生させたユーザー
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,     -- 関連する投稿
+  type TEXT NOT NULL,                                                -- 通知タイプ（'reaction', 'comment'等）
+  emoji TEXT,                                                        -- リアクションの場合の絵文字
+  is_read BOOLEAN DEFAULT FALSE,                                    -- 既読/未読フラグ
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
 ### TypeScript型定義
@@ -205,6 +222,20 @@ export interface ReactionCount {
   emoji: string;
   count: number;
   user_reacted: boolean;
+}
+
+// types/notification.ts
+export interface Notification {
+  id: string;
+  user_id: string;         // 通知を受け取るユーザー
+  actor_id: string;        // 通知を発生させたユーザー
+  post_id: string;         // 関連する投稿
+  type: 'reaction' | 'comment';  // 通知タイプ
+  emoji?: string;          // リアクションの場合の絵文字
+  is_read: boolean;        // 既読/未読フラグ
+  created_at: string;
+  actor?: Profile;         // 通知を発生させたユーザーの情報
+  post?: Post;             // 関連する投稿の情報
 }
 ```
 
@@ -312,6 +343,52 @@ const { error } = await supabase
   .match({ post_id: postId, user_id: userId, emoji: '👏' });
 ```
 
+#### 4. 通知API
+```typescript
+// 通知作成（リアクション時）
+const { data, error } = await supabase
+  .from('notifications')
+  .insert({
+    user_id: postAuthorId,      // 投稿者
+    actor_id: currentUserId,     // リアクションしたユーザー
+    post_id: postId,
+    type: 'reaction',
+    emoji: '👏'
+  });
+
+// 通知一覧取得
+const { data, error } = await supabase
+  .from('notifications')
+  .select(`
+    *,
+    actor:profiles!actor_id(username, display_name, avatar_url),
+    post:posts(id, content)
+  `)
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+  .limit(20);
+
+// 未読通知数取得
+const { count, error } = await supabase
+  .from('notifications')
+  .select('*', { count: 'exact', head: true })
+  .eq('user_id', userId)
+  .eq('is_read', false);
+
+// 通知を既読にする
+const { error } = await supabase
+  .from('notifications')
+  .update({ is_read: true })
+  .eq('id', notificationId);
+
+// 全通知を既読にする
+const { error } = await supabase
+  .from('notifications')
+  .update({ is_read: true })
+  .eq('user_id', userId)
+  .eq('is_read', false);
+```
+
 ### UI/UX設計
 
 #### 1. レスポンシブレイアウト
@@ -334,7 +411,40 @@ const FIXED_TAGS = [
 const REACTION_EMOJIS = ['👏', '💖', '🤣', '🤔', '👍'];
 ```
 
-#### 4. オンボーディングフロー
+#### 4. 通知テキスト生成
+```typescript
+// 通知メッセージの生成
+const generateNotificationMessage = (notification: Notification): string => {
+  const actorName = notification.actor?.display_name || notification.actor?.username || '誰か';
+
+  switch (notification.type) {
+    case 'reaction':
+      return `${actorName}さんがあなたの投稿に${notification.emoji}しました`;
+    case 'comment':
+      return `${actorName}さんがあなたの投稿にコメントしました`;
+    default:
+      return `${actorName}さんからの通知`;
+  }
+};
+
+// 相対時間表示
+const getRelativeTime = (createdAt: string): string => {
+  const now = new Date();
+  const created = new Date(createdAt);
+  const diffMs = now.getTime() - created.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'たった今';
+  if (diffMins < 60) return `${diffMins}分前`;
+  if (diffHours < 24) return `${diffHours}時間前`;
+  if (diffDays < 7) return `${diffDays}日前`;
+  return created.toLocaleDateString('ja-JP');
+};
+```
+
+#### 5. オンボーディングフロー
 ```typescript
 // オンボーディング状態チェック
 const checkOnboardingStatus = async (userId: string) => {
@@ -365,7 +475,7 @@ const INTEREST_OPTIONS = [
 ];
 ```
 
-#### 5. ユーザーID設計（ハイブリッド方式）
+#### 6. ユーザーID設計（ハイブリッド方式）
 ```typescript
 // プロフィールURL例: /profile/john_doe
 // 内部処理: UUID（a1b2c3d4-e5f6-7890-abcd-ef1234567890）
