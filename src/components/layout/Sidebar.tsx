@@ -45,8 +45,3 @@ export async function Sidebar() {
     </aside>
   );
 }
-        </nav>
-      </Card>
-    </aside>
-  );
-}

@@ -47,7 +47,7 @@ export function ReactionButton({ postId, emoji, count, userReacted }: ReactionBu
       )}
     >
       <span className="text-base leading-none">{emoji}</span>
-      <span className="font-medium leading-none">{optimisticCount}</span>
+      {optimisticCount > 0 && <span className="font-medium leading-none">{optimisticCount}</span>}
     </button>
   );
 }
