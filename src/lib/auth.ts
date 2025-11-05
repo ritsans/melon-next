@@ -88,6 +88,21 @@ export async function getProfile(userId: string) {
 }
 
 /**
+ * ユーザー名からプロフィール情報を取得
+ * @param username - ユーザー名
+ */
+export async function getProfileByUsername(username: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("profiles").select("*").eq("username", username).single();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+/**
  * パスワードリセットメール送信
  * @param data - パスワード忘れフォームデータ
  * @returns 成功時はnull、エラー時はエラーメッセージ

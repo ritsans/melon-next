@@ -62,6 +62,49 @@ export async function getPosts(): Promise<PostWithProfile[]> {
 }
 
 /**
+ * Get posts by user, ordered by creation date (newest first)
+ * @param userId - User ID to filter by
+ * @returns Array of posts by the specified user
+ */
+export async function getPostsByUser(userId: string): Promise<PostWithProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
+    `,
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching posts by user:", error);
+    return [];
+  }
+
+  // Transform the data to match our type
+  return (
+    data?.map((post) => ({
+      id: post.id,
+      content: post.content,
+      tags: post.tags,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
+      reactions: post.reactions || [],
+    })) || []
+  );
+}
+
+/**
  * Get posts filtered by tag, ordered by creation date (newest first)
  * @param tag - Tag to filter by
  * @returns Array of posts with the specified tag
