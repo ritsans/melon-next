@@ -20,6 +20,7 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
   const [showDebug, setShowDebug] = useState(false);
 
   // ポーリング: 30秒ごとに未読数を更新
+  // 開発環境ではポーリングを無効化、本番環境では有効化
   useEffect(() => {
     const fetchUnreadCount = async () => {
       const count = await getUnreadCount(userId);
@@ -34,11 +35,14 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
     // 初回取得
     fetchUnreadCount();
 
-    // 現在の設定では、「30秒」ごとにポーリング
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // 本番環境のみポーリングを有効化（開発環境では無効）
+    const isProduction = process.env.NODE_ENV === "production";
+    const interval = isProduction ? setInterval(fetchUnreadCount, 30000) : undefined;
 
     // クリーンアップ
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [userId]);
 
   // ドロップダウンが閉じられたときに未読数を更新
