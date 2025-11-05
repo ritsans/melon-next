@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { updateProfile, checkUsernameAvailability } from "@/lib/auth";
 import { type OnboardingFormData, onboardingSchema } from "@/lib/validations";
 
@@ -102,9 +104,9 @@ export function OnboardingForm() {
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">英数字とアンダースコアのみ、3〜20文字</p>
-            {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
+            <FormError error={errors.username?.message} className="mt-1" />
             {canCheck && usernameCheckState === "taken" && !errors.username && (
-              <p className="text-sm text-red-600 mt-1">このユーザー名は既に使用されています</p>
+              <FormError error="このユーザー名は既に使用されています" className="mt-1" />
             )}
             {canCheck && usernameCheckState === "available" && (
               <p className="text-sm text-green-600 mt-1">このユーザー名は利用可能です</p>
@@ -123,7 +125,7 @@ export function OnboardingForm() {
               className="mt-2"
             />
             <p className="text-sm text-gray-500 mt-1">15文字以下（省略可）</p>
-            {errors.display_name && <p className="text-sm text-red-600 mt-1">{errors.display_name.message}</p>}
+            <FormError error={errors.display_name?.message} className="mt-1" />
           </div>
 
           {/* 自己紹介 */}
@@ -138,7 +140,7 @@ export function OnboardingForm() {
               rows={6}
             />
             <p className="text-sm text-gray-500 mt-1">200文字以下（省略可）</p>
-            {errors.bio && <p className="text-sm text-red-600 mt-1">{errors.bio.message}</p>}
+            <FormError error={errors.bio?.message} className="mt-1" />
           </div>
 
           {/* 興味のある分野 */}
@@ -162,16 +164,16 @@ export function OnboardingForm() {
                 </div>
               ))}
             </div>
-            {errors.interests && <p className="text-sm text-red-600 mt-2">{errors.interests.message}</p>}
+            <FormError error={errors.interests?.message} className="mt-2" />
           </div>
+
+          {/* エラーメッセージ */}
+          {error && <ErrorMessage message={error} />}
 
           {/* 送信ボタン */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "設定中..." : "設定を完了"}
           </Button>
-
-          {/* エラーメッセージ */}
-          {error && <p className="text-center text-sm text-red-600">{error}</p>}
         </form>
       </CardContent>
     </Card>

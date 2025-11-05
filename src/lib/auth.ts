@@ -10,6 +10,7 @@ import type {
   OnboardingFormData,
 } from "./validations";
 import { createClient } from "@/lib/supabase/server";
+import { formatAuthError, formatSupabaseError } from "./errors";
 
 /**
  * ログイン処理
@@ -25,7 +26,7 @@ export async function login(data: LoginFormData) {
   });
 
   if (error) {
-    return { error: "メールアドレスまたはパスワードが正しくありません" };
+    return { error: formatAuthError(error) };
   }
 
   redirect("/home");
@@ -45,7 +46,7 @@ export async function signup(data: SignupFormData) {
   });
 
   if (error) {
-    return { error: "アカウントの作成に失敗しました" };
+    return { error: formatAuthError(error) };
   }
 
   redirect("/onboarding");
@@ -99,7 +100,7 @@ export async function forgotPassword(data: ForgotPasswordFormData) {
   });
 
   if (error) {
-    return { error: "パスワードリセットメールの送信に失敗しました" };
+    return { error: formatAuthError(error) };
   }
 
   return null;
@@ -118,7 +119,7 @@ export async function resetPassword(data: ResetPasswordFormData) {
   });
 
   if (error) {
-    return { error: "パスワードの再設定に失敗しました" };
+    return { error: formatAuthError(error) };
   }
 
   redirect("/login");
@@ -185,7 +186,7 @@ export async function updateProfile(data: OnboardingFormData) {
   });
 
   if (error) {
-    return { error: "プロフィールの更新に失敗しました" };
+    return { error: formatSupabaseError(error) };
   }
 
   redirect("/home");

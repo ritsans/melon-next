@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { signup } from "@/lib/auth";
 import Image from "next/image";
 import { type SignupFormData, signupSchema } from "@/lib/validations";
@@ -70,7 +72,7 @@ export function SignupForm() {
                 disabled={isSubmitting}
                 className="mt-2"
               />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+              <FormError error={errors.email?.message} className="mt-1" />
             </div>
 
             {/* パスワード */}
@@ -85,7 +87,7 @@ export function SignupForm() {
                 disabled={isSubmitting}
                 className="mt-2"
               />
-              {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
+              <FormError error={errors.password?.message} className="mt-1" />
             </div>
 
             {/* パスワード確認 */}
@@ -100,16 +102,16 @@ export function SignupForm() {
                 disabled={isSubmitting}
                 className="mt-2 mb-2"
               />
-              {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
+              <FormError error={errors.confirmPassword?.message} className="mt-1" />
             </div>
+
+            {/* 認証エラーメッセージ */}
+            {error && <ErrorMessage message={error} />}
 
             {/* サインアップボタン */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "登録中..." : "アカウントを作成"}
             </Button>
-
-            {/* 認証エラーメッセージ */}
-            {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
             {/* ログインリンク */}
             <p className="text-center text-sm text-gray-600">

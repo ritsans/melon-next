@@ -10,6 +10,8 @@ import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { login } from "@/lib/auth";
 import { type LoginFormData, loginSchema } from "@/lib/validations";
 
@@ -70,7 +72,7 @@ export function LoginForm() {
                 disabled={isSubmitting}
                 className="mt-2"
               />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+              <FormError error={errors.email?.message} className="mt-1" />
             </div>
 
             {/* パスワード */}
@@ -90,16 +92,16 @@ export function LoginForm() {
                 disabled={isSubmitting}
                 className="mt-2 mb-2"
               />
-              {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
+              <FormError error={errors.password?.message} className="mt-1" />
             </div>
+
+            {/* 認証エラーメッセージ */}
+            {error && <ErrorMessage message={error} />}
 
             {/* ログインボタン */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "ログイン中..." : "ログイン"}
             </Button>
-
-            {/* 認証エラーメッセージ */}
-            {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
             {/* 区切り線 */}
             <div className="relative">

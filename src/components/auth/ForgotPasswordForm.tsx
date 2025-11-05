@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { forgotPassword } from "@/lib/auth";
 import { type ForgotPasswordFormData, forgotPasswordSchema } from "@/lib/validations";
 
@@ -71,16 +73,16 @@ export function ForgotPasswordForm() {
                 disabled={isSubmitting}
                 className="mt-2"
               />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+              <FormError error={errors.email?.message} className="mt-1" />
             </div>
+
+            {/* エラーメッセージ */}
+            {error && <ErrorMessage message={error} />}
 
             {/* 送信ボタン */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "送信中..." : "送信する"}
             </Button>
-
-            {/* エラーメッセージ */}
-            {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
             {/* ログインに戻るリンク */}
             <p className="text-center text-sm text-gray-600">

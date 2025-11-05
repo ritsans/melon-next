@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { resetPassword } from "@/lib/auth";
 import { type ResetPasswordFormData, resetPasswordSchema } from "@/lib/validations";
 
@@ -53,7 +55,7 @@ export function ResetPasswordForm() {
               disabled={isSubmitting}
               className="mt-2"
             />
-            {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
+            <FormError error={errors.password?.message} className="mt-1" />
           </div>
 
           {/* パスワード確認 */}
@@ -68,16 +70,16 @@ export function ResetPasswordForm() {
               disabled={isSubmitting}
               className="mt-2"
             />
-            {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>}
+            <FormError error={errors.confirmPassword?.message} className="mt-1" />
           </div>
+
+          {/* エラーメッセージ */}
+          {error && <ErrorMessage message={error} />}
 
           {/* 再設定ボタン */}
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "設定中..." : "パスワードを再設定"}
           </Button>
-
-          {/* エラーメッセージ */}
-          {error && <p className="text-center text-sm text-red-600">{error}</p>}
         </form>
       </CardContent>
     </Card>

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { FormError } from "@/components/ui/form-error";
 import { useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { PRESET_TAGS, normalizeTag } from "@/lib/tags";
@@ -101,7 +103,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
           className="resize-none"
         />
         <div className="flex items-center justify-between">
-          <div>{errors.content && <p className="text-sm text-red-600">{errors.content.message}</p>}</div>
+          <FormError error={errors.content?.message} />
           <p className="text-sm text-neutral-500">{contentLength} / 500</p>
         </div>
       </div>
@@ -202,15 +204,11 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
           </div>
         )}
 
-        {errors.tags && <p className="text-sm text-red-600">{errors.tags.message}</p>}
+        <FormError error={errors.tags?.message} />
       </div>
 
       {/* Error Message */}
-      {error && (
-        <div className="rounded-md bg-red-50 p-3">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
+      {error && <ErrorMessage message={error} />}
 
       {/* Submit Buttons */}
       <div className="flex justify-end gap-3">
