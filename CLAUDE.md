@@ -75,22 +75,32 @@ TypeScript のコンパイルエラーをチェックします（ビルドせず
   - `(main)/`: メインコンテンツのページグループ（ルートグループ、URL には含まれない）
     - `layout.tsx`: メインレイアウト（Header + Sidebar 構成）
     - `home/page.tsx`: ホームフィード（投稿一覧表示）
+    - `notifications/page.tsx`: 通知一覧ページ
+    - `tags/[slug]/page.tsx`: タグ別投稿表示ページ（動的ルート）
   - `api/`: API ルート
     - `test-db/route.ts`: データベース接続テスト用 API
 - **`src/lib/`**: 共通ユーティリティ関数とヘルパー
   - `utils.ts`: `cn()` 関数 - clsx と tailwind-merge を組み合わせた Tailwind CSS のクラス名マージユーティリティ
   - `validations.ts`: Zod バリデーションスキーマ定義（ログイン、サインアップ、投稿フォームなど）
   - `auth.ts`: 認証ヘルパー関数（login, signup, logout, getCurrentUser, getProfile）
-  - `posts.ts`: 投稿関連のロジック（createPost, getPosts）
+  - `posts.ts`: 投稿関連のロジック（createPost, getPosts, deletePost, updatePost）
   - `reactions.ts`: リアクション機能のロジック（toggleReaction）
   - `tags.ts`: タグ正規化とプリセットタグ管理（normalizeTag, PRESET_TAGS, TAG_LABELS, tagLabel）
+  - `notifications.ts`: 通知機能のロジック（getNotifications, markAsRead, markAllAsRead）
   - `reaction-utils.ts`: リアクション表示用のユーティリティ関数
+  - `errors.ts`: エラーハンドリングユーティリティ（handleError, AppError）
   - `supabase/`: Supabase クライアント設定
     - `client.ts`: クライアントサイド用 Supabase クライアント
     - `server.ts`: サーバーサイド用 Supabase クライアント
     - `database.types.ts`: データベース型定義（Supabase CLI で自動生成）
 - **`src/components/`**: React コンポーネント
-  - `ui/`: shadcn/ui コンポーネント（button, input, label, card, dialog, avatar, dropdown-menu など）
+  - `ui/`: shadcn/ui コンポーネント
+    - `button.tsx`, `input.tsx`, `label.tsx`, `card.tsx`, `dialog.tsx`, `avatar.tsx`, `dropdown-menu.tsx`
+    - `badge.tsx`: バッジコンポーネント（タグ表示用）
+    - `checkbox.tsx`: チェックボックスコンポーネント（オンボーディングのタグ選択用）
+    - `form-error.tsx`: フォームエラー表示コンポーネント
+    - `error-message.tsx`: 汎用エラーメッセージコンポーネント
+    - `textarea.tsx`: テキストエリアコンポーネント
   - `auth/`: 認証関連コンポーネント
     - `LoginForm.tsx`: ログインフォーム
     - `SignupForm.tsx`: サインアップフォーム
@@ -104,13 +114,21 @@ TypeScript のコンパイルエラーをチェックします（ビルドせず
     - `PostCard.tsx`: 投稿カード表示コンポーネント
     - `PostForm.tsx`: 投稿作成・編集フォーム
     - `CreatePostButton.tsx`: 投稿作成ボタン＆モーダル制御
+    - `DeletePostDialog.tsx`: 投稿削除確認ダイアログ
+  - `notifications/`: 通知関連コンポーネント
+    - `NotificationBell.tsx`: 通知ベルアイコン（未読数表示）
+    - `NotificationDropdown.tsx`: 通知ドロップダウンメニュー
+    - `NotificationItem.tsx`: 個別通知アイテム表示
   - `reactions/`: リアクション関連コンポーネント
     - `ReactionButton.tsx`: 個別リアクションボタン
     - `ReactionPanel.tsx`: リアクションパネル（複数リアクションボタンのグループ）
 - **`src/proxy.ts`**: Next.js 16 の Proxy（従来の middleware.ts に相当）
   - 認証セッション管理とルートアクセス制御
 - **`supabase/migrations/`**: データベースマイグレーションファイル
-  - `20250927000000_initial_schema.sql`: 初期スキーマ（profiles, posts, reactions, tags テーブル）
+  - `20250101000000_initial_schema.sql`: 初期スキーマ（profiles, posts, reactions テーブル）
+  - `20250101000001_rls_policies.sql`: RLS（Row Level Security）ポリシー設定
+  - `20250101000002_change_tag_to_array.sql`: タグシステムを配列型に変更
+  - `20250101000003_create_notifications.sql`: 通知機能テーブルとトリガー設定
 
 ### Path Alias
 shadcn/ui の設定により、以下の path alias が利用可能です:
@@ -165,8 +183,26 @@ import useCustomHook from "@/hooks/useCustomHook";
 - プリセットタグ（`PRESET_TAGS`）と カスタムタグ の両方をサポート
 - タグは正規化（`normalizeTag()`）により、大文字小文字やスペースを統一
 - `TAG_LABELS` でタグの日本語表示ラベルを管理
-- 投稿には複数のタグを付与可能（`posts_tags` 中間テーブルで多対多関係）
+- 投稿には複数のタグを付与可能（`posts` テーブルの `tags` 配列カラムで管理）
 - Sidebar でタグフィルタリング機能を提供
+- 動的ルート `/tags/[slug]` でタグ別投稿一覧を表示
+
+#### 通知システムの設計
+- リアクションが付けられたときに投稿者に自動通知
+- `notifications` テーブルで通知データを管理
+- データベーストリガーで自動通知作成（`create_reaction_notification()`）
+- Header に通知ベルアイコンを表示し、未読数をリアルタイム表示
+- 通知ドロップダウンで最新 5 件の通知をプレビュー
+- `/notifications` ページで全通知を一覧表示
+- 個別通知の既読管理と一括既読機能
+
+#### エラーハンドリングの設計
+- `src/lib/errors.ts` で統一的なエラーハンドリングユーティリティを提供
+- `AppError` クラスでカスタムエラー型を定義
+- `handleError()` 関数でエラーの種類に応じた適切なメッセージを返却
+- フォームエラー表示用の `FormError` と `ErrorMessage` コンポーネント
+- Server Actions でのエラーは `{ error: string }` 形式で返却
+- クライアント側でエラーメッセージを適切に表示
 
 ## Working with React Server Components
 
