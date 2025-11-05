@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 
 export type Reaction = {
@@ -68,6 +69,21 @@ export async function toggleReaction(postId: string, emoji: string) {
       if (insertError) {
         console.error("Error adding reaction:", insertError);
         return { success: false, error: "リアクションの追加に失敗しました" };
+      }
+
+      // 投稿者のIDを取得して通知を作成
+      const { data: post, error: postError } = await supabase
+        .from("posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (postError) {
+        console.error("Error fetching post:", postError);
+        // 通知作成の失敗はリアクション処理自体には影響させない
+      } else if (post) {
+        // 通知を作成（自分の投稿へのリアクションは除外される）
+        await createNotification(post.user_id, user.id, postId, emoji);
       }
     }
 

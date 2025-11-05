@@ -25,6 +25,15 @@ export async function Sidebar() {
           <span>🏠</span>
           <span>ホーム</span>
         </Link>
+        {user && (
+          <Link
+            href="/notifications"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+          >
+            <span>🔔</span>
+            <span>通知</span>
+          </Link>
+        )}
       </nav>
 
       {/* タグリスト */}

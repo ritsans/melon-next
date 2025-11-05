@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser, getProfile, logout } from "@/lib/auth";
+import { getUnreadCount } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -9,10 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export async function Header() {
   const user = await getCurrentUser();
   const profile = user ? await getProfile(user.id) : null;
+  const unreadCount = user ? await getUnreadCount(user.id) : 0;
 
   return (
     <header className="border-b bg-white">
@@ -29,6 +32,9 @@ export async function Header() {
               <Link href="/home" className="text-sm font-medium text-neutral-700 hover:text-neutral-900">
                 ホーム
               </Link>
+
+              {/* 通知ベル */}
+              <NotificationBell userId={user.id} initialUnreadCount={unreadCount} />
 
               {/* ユーザーメニュー */}
               <DropdownMenu>
