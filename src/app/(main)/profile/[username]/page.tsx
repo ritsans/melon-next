@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
-import { getProfileByUsername } from "@/lib/auth";
+import { getProfileByUsername, getCurrentUser } from "@/lib/auth";
 import { getPostsByUser } from "@/lib/posts";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   // ユーザーの投稿を取得
   const posts = await getPostsByUser(profile.id);
+
+  // 現在のユーザーを取得（削除機能のため）
+  const currentUser = await getCurrentUser();
 
   // アバター用のイニシャル取得
   const getInitials = (name: string) => {
@@ -95,7 +98,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         ) : (
           <div className="space-y-4">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} />
             ))}
           </div>
         )}

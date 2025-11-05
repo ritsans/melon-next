@@ -204,6 +204,18 @@ export async function deletePost(postId: string) {
     // Create Supabase client
     const supabase = await createClient();
 
+    // Get post details before deletion to revalidate the profile page
+    const { data: post, error: fetchError } = await supabase
+      .from("posts")
+      .select("user_id, profiles!inner(username)")
+      .eq("id", postId)
+      .single();
+
+    if (fetchError || !post) {
+      console.error("Error fetching post:", fetchError);
+      return { success: false, error: "投稿が見つかりませんでした" };
+    }
+
     // Delete post (RLS policy ensures user can only delete their own posts)
     const { error } = await supabase.from("posts").delete().eq("id", postId);
 
@@ -214,6 +226,8 @@ export async function deletePost(postId: string) {
 
     // Revalidate paths to update UI
     revalidatePath("/home");
+    // プロフィールページも再検証して、削除後に正しく表示されるようにする
+    revalidatePath(`/profile/${post.profiles.username}`);
 
     return { success: true };
   } catch (error) {
