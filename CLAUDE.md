@@ -317,5 +317,5 @@ SUPABASE_ACCESS_TOKEN=your-supabase-access-token
 ### Database Migrations
 
 - データベーススキーマの変更は `supabase/migrations/` ディレクトリに SQL ファイルとして管理されます
-- マイグレーションは Supabase CLI を使用して適用します： `supabase db push`
-- 型定義の更新： `supabase gen types typescript --local > src/lib/supabase/database.types.ts`
+- マイグレーションの適用：Supabase CLI は使用せず、手動で Supabase Dashboard の SQL Editor にコピー&ペーストして適用します
+- 型定義の更新：データベーススキーマ変更後は、型定義を手動で更新する必要があります
