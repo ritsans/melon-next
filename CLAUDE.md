@@ -227,6 +227,70 @@ import useCustomHook from "@/hooks/useCustomHook";
    - Client Components から直接呼び出し可能
    - フォーム送信、データ作成・更新・削除に使用
 
+### 🚨 `"use server"` と `"use client"` の重要なルール
+
+**必ず以下のルールを守ってください。過去に複数回違反した実績があるため、特に注意が必要です。**
+
+#### `"use server"` ディレクティブのルール
+
+1. **ファイルの先頭に `"use server"` を付けた場合**:
+   - そのファイルから **export されるすべての関数は Server Actions になる**
+   - Server Actions は **必ず `async` 関数でなければならない**
+   - 同期関数を export するとエラーになる
+
+2. **ブラウザAPIは使用できない**:
+   - `"use server"` ファイル内では以下を使用できない:
+     - `window`, `document`, `localStorage`, `sessionStorage`
+     - `FileReader`, `Image`, `canvas`, その他のブラウザ専用API
+   - これらを使用する関数は別のファイル（クライアント側）に分離する
+
+3. **内部ヘルパー関数の扱い**:
+   - `export` しない関数（内部ヘルパー）は同期でもOK
+   - しかしブラウザAPIは依然として使用不可
+
+#### `"use client"` ディレクティブのルール
+
+1. **インタラクティブなコンポーネントに必須**:
+   - `useState`, `useEffect`, `useRef` などのReact Hooksを使う場合
+   - イベントハンドラ（`onClick`, `onChange`など）を使う場合
+   - ブラウザAPIを使う場合
+
+2. **Server Actionsは呼び出せる**:
+   - Client Componentから Server Actions（`"use server"` 関数）は呼び出し可能
+   - これがNext.js App Routerの強力な機能
+
+#### ファイル設計の原則
+
+**クライアント/サーバーの責務を明確に分離する:**
+
+```typescript
+// ❌ 悪い例: 混在させている
+// lib/images.ts
+"use server";
+
+export function validateImage(file: File) { /* ブラウザAPIを使用 */ }  // エラー！
+export async function uploadImage(file: File) { /* サーバー処理 */ }  // OK
+
+// ✅ 良い例: 責務を分離
+// lib/image-utils.client.ts (クライアント側)
+export function validateImage(file: File) { /* ブラウザAPIを使用 */ }
+export async function resizeImage(file: File) { /* canvas API使用 */ }
+
+// lib/images.ts (サーバー側)
+"use server";
+export async function uploadImage(file: File) { /* Supabase Storage */ }
+export async function deleteImage(path: string) { /* Supabase Storage */ }
+```
+
+#### 実装前のチェックリスト
+
+新しいファイルを作成する前に、必ず以下を確認してください:
+
+- [ ] この関数はブラウザAPIを使用するか？ → Client側（`"use server"` 不要）
+- [ ] この関数はデータベース操作を行うか？ → Server側（`"use server"` 必要）
+- [ ] export する関数はすべて async か？ → Server側の場合は必須
+- [ ] 複数の責務が混在していないか？ → 分離する
+
 ### 実装例
 
 **Server Component でのデータフェッチ:**
