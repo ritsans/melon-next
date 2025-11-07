@@ -96,12 +96,12 @@ src/
 - **NotificationDropdown**: 通知一覧表示、既読/未読管理
 
 #### 2. 投稿関連コンポーネント
-- **PostCard**: 投稿内容、作成者、リアクション表示、画像グリッド表示（将来実装予定）
-- **PostForm**: テキスト入力、タグ選択、画像アップロード機能（将来実装予定）
+- **PostCard**: 投稿内容、作成者、リアクション表示、画像グリッド表示
+- **PostForm**: テキスト入力、タグ選択、画像アップロード機能
 - **PostList**: 投稿一覧の表示とページネーション
-- **ImageUploader**: 画像アップロード・プレビューコンポーネント（将来実装予定）
-- **ImageGallery**: 投稿内画像のグリッド表示コンポーネント（将来実装予定）
-- **ImageLightbox**: 画像拡大表示モーダルコンポーネント（将来実装予定）
+- **ImageUploader**: 画像アップロード・プレビューコンポーネント（ドラッグ&ドロップ対応）
+- **ImageGallery**: 投稿内画像のグリッド表示コンポーネント（レスポンシブ対応）
+- **ImageLightbox**: 画像拡大表示モーダルコンポーネント（スワイプ/矢印ナビゲーション対応）
 
 #### 3. リアクションコンポーネント
 - **ReactionPanel**: 絵文字リアクション、カウント表示
@@ -126,13 +126,12 @@ CREATE TABLE profiles (
 );
 
 -- 投稿テーブル
--- 注：image_urls カラムは将来実装予定（現在はテキストのみ対応）
 CREATE TABLE posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
   tag TEXT NOT NULL,
-  image_urls JSONB,  -- 将来実装予定: 画像URLの配列 (例: ["url1", "url2"])
+  image_urls JSONB,  -- 画像URLの配列 (例: ["url1", "url2"], 最大4枚)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -205,7 +204,7 @@ export interface Post {
   user_id: string;
   content: string;
   tag: string;
-  image_urls?: string[];  // 将来実装予定: 画像URLの配列
+  image_urls?: string[];  // 画像URLの配列（最大4枚）
   created_at: string;
   updated_at: string;
   profiles: Profile;
@@ -275,14 +274,14 @@ const { data, error } = await supabase
 
 #### 2. 投稿API
 ```typescript
-// 投稿作成
+// 投稿作成（画像付き）
 const { data, error } = await supabase
   .from('posts')
   .insert({
     content: 'Hello World!',
     tag: 'general',
     user_id: user.id,
-    image_urls: [] // 将来実装予定: 画像URLの配列
+    image_urls: ['https://...', 'https://...'] // 画像URLの配列（最大4枚）
   });
 
 // 投稿一覧取得
@@ -295,14 +294,16 @@ const { data, error } = await supabase
   `)
   .order('created_at', { ascending: false });
 
-// 画像アップロードAPI（将来実装予定）
+// 画像アップロードAPI
 // Supabase Storageへのアップロード
 const uploadImage = async (file: File, postId: string) => {
   const fileExt = file.name.split('.').pop();
-  const fileName = `${postId}/${Date.now()}.${fileExt}`;
+  const timestamp = Date.now();
+  const uuid = crypto.randomUUID();
+  const fileName = `${postId}/${timestamp}-${uuid}.${fileExt}`;
 
   const { data, error } = await supabase.storage
-    .from('post-images')
+    .from('gazo-images')
     .upload(fileName, file, {
       cacheControl: '3600',
       upsert: false
@@ -312,17 +313,43 @@ const uploadImage = async (file: File, postId: string) => {
 
   // 公開URLを取得
   const { data: { publicUrl } } = supabase.storage
-    .from('post-images')
+    .from('gazo-images')
     .getPublicUrl(fileName);
 
   return publicUrl;
 };
 
-// 画像削除API（将来実装予定）
+// 複数画像の一括アップロード
+const uploadImages = async (files: File[], postId: string): Promise<string[]> => {
+  const uploadPromises = files.map(file => uploadImage(file, postId));
+  return Promise.all(uploadPromises);
+};
+
+// 画像削除API
 const deleteImage = async (imagePath: string) => {
   const { error } = await supabase.storage
-    .from('post-images')
+    .from('gazo-images')
     .remove([imagePath]);
+
+  if (error) throw error;
+};
+
+// 投稿削除時に関連画像も削除
+const deletePostWithImages = async (postId: string, imageUrls?: string[]) => {
+  // 画像削除
+  if (imageUrls && imageUrls.length > 0) {
+    const imagePaths = imageUrls.map(url => {
+      const urlObj = new URL(url);
+      return urlObj.pathname.replace('/storage/v1/object/public/gazo-images/', '');
+    });
+    await supabase.storage.from('gazo-images').remove(imagePaths);
+  }
+
+  // 投稿削除
+  const { error } = await supabase
+    .from('posts')
+    .delete()
+    .eq('id', postId);
 
   if (error) throw error;
 };
@@ -553,7 +580,6 @@ export const postSchema = z.object({
     .min(1, '投稿内容を入力してください')
     .max(500, '投稿は500文字以下で入力してください'),
   tag: z.string().min(1, 'タグを選択してください'),
-  // 将来実装予定: 画像バリデーション
   images: z
     .array(z.instanceof(File))
     .max(4, '画像は最大4枚までアップロード可能です')
@@ -615,6 +641,198 @@ const FormError = ({ error }: { error?: string }) => {
   );
 };
 ```
+
+## 画像機能の詳細設計
+
+### 1. Supabase Storage 設定
+
+#### バケット設定
+```sql
+-- gazo-imagesバケットの作成（Supabase Dashboardで実行）
+-- Bucket名: gazo-images
+-- Public bucket: true（公開アクセス許可）
+-- File size limit: 5MB
+-- Allowed MIME types: image/jpeg, image/png, image/gif, image/webp
+```
+
+#### RLS（Row Level Security）ポリシー
+```sql
+-- 画像のアップロード: 認証済みユーザーのみ
+CREATE POLICY "Authenticated users can upload images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'gazo-images');
+
+-- 画像の閲覧: すべてのユーザー（公開バケット）
+CREATE POLICY "Anyone can view images"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'gazo-images');
+
+-- 画像の削除: 投稿者のみ（パス構造で制御）
+CREATE POLICY "Users can delete their own images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'gazo-images' AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+```
+
+### 2. 画像アップロードフロー
+
+```typescript
+// lib/images.ts
+
+// 画像リサイズとファイルサイズ圧縮
+const resizeImage = async (file: File, maxWidth: number = 1200): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: file.type }));
+            } else {
+              reject(new Error('Failed to resize image'));
+            }
+          },
+          file.type,
+          0.85 // 画質85%で圧縮
+        );
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+// 画像バリデーション
+const validateImage = (file: File): { valid: boolean; error?: string } => {
+  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+
+  if (!validTypes.includes(file.type)) {
+    return { valid: false, error: 'JPEG、PNG、GIF、WebP形式の画像のみアップロード可能です' };
+  }
+
+  if (file.size > maxSize) {
+    return { valid: false, error: '画像サイズは5MB以下である必要があります' };
+  }
+
+  return { valid: true };
+};
+```
+
+### 3. 画像表示コンポーネント設計
+
+#### ImageGallery コンポーネント
+```typescript
+// components/posts/ImageGallery.tsx
+interface ImageGalleryProps {
+  images: string[];
+  onImageClick: (index: number) => void;
+}
+
+// レスポンシブグリッドレイアウト
+// 1枚: 1x1（フル幅）
+// 2枚: 2x1（横並び）
+// 3枚: 2x2（1枚大 + 2枚小）
+// 4枚: 2x2（均等グリッド）
+```
+
+#### ImageLightbox コンポーネント
+```typescript
+// components/posts/ImageLightbox.tsx
+interface ImageLightboxProps {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}
+
+// 機能:
+// - 画像の拡大表示
+// - スワイプジェスチャー対応（モバイル）
+// - 矢印キー/ボタンでナビゲーション
+// - ESCキーで閉じる
+// - 画像インデックス表示（例: 1/4）
+```
+
+#### ImageUploader コンポーネント
+```typescript
+// components/posts/ImageUploader.tsx
+interface ImageUploaderProps {
+  images: File[];
+  onImagesChange: (images: File[]) => void;
+  maxImages?: number; // デフォルト: 4
+}
+
+// 機能:
+// - ドラッグ&ドロップエリア
+// - ファイル選択ボタン
+// - プレビュー表示（サムネイル）
+// - 個別画像の削除
+// - 画像の並び替え（ドラッグ&ドロップ）
+```
+
+### 4. 画像URL管理
+
+```typescript
+// 画像URLからファイルパスを抽出
+const getImagePathFromUrl = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.pathname.replace('/storage/v1/object/public/gazo-images/', '');
+  } catch {
+    return '';
+  }
+};
+
+// 投稿IDから画像フォルダパスを生成
+const getImageFolderPath = (postId: string): string => {
+  return `${postId}/`;
+};
+```
+
+### 5. パフォーマンス最適化
+
+#### 遅延読み込み
+```typescript
+// Next.js Image コンポーネントを使用
+import Image from 'next/image';
+
+<Image
+  src={imageUrl}
+  alt="投稿画像"
+  width={600}
+  height={400}
+  loading="lazy"
+  placeholder="blur"
+  blurDataURL="/placeholder.png"
+/>
+```
+
+#### プログレッシブローディング
+- サムネイル表示時: 低解像度版を先に表示
+- ライトボックス: 高解像度版を読み込み
 
 ## テスト戦略
 
