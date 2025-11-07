@@ -19,6 +19,28 @@ export type ReactionCount = {
   userReacted: boolean;
 };
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function notifyPostAuthor(supabase: SupabaseServerClient, postId: string, actorId: string, emoji: string) {
+    // 「Supabase 経由で投稿者を特定し、リアクションしたユーザーと絵文字情報を使って通知を作成する」専用ヘルパーです。
+    // パラメータは以下の通りです。
+    try {
+    const { data: post, error } = await supabase.from("posts").select("user_id").eq("id", postId).single();
+    if (error) {
+      console.error("Error fetching post:", error);
+      return;
+    }
+
+    if (!post || post.user_id === actorId) {
+      return;
+    }
+
+    await createNotification(post.user_id, actorId, postId, emoji);
+  } catch (error) {
+    console.error("Error creating notification:", error);
+  }
+}
+
 /**
  * リアクションをトグル（追加/削除/変更）する
  * 1投稿につき1リアクションのみ許可（排他的選択）
@@ -60,7 +82,7 @@ export async function toggleReaction(postId: string, emoji: string) {
         }
       } else {
         // 異なるリアクションの場合は更新（既存のリアクションを新しいリアクションに変更）
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from("reactions")
           .update({ emoji, created_at: new Date().toISOString() })
           .eq("id", existingReaction.id)
@@ -71,19 +93,7 @@ export async function toggleReaction(postId: string, emoji: string) {
           return { success: false, error: "リアクションの変更に失敗しました" };
         }
 
-        // 投稿者のIDを取得して通知を作成
-        const { data: post, error: postError } = await supabase
-          .from("posts")
-          .select("user_id")
-          .eq("id", postId)
-          .single();
-
-        if (postError) {
-          console.error("Error fetching post:", postError);
-        } else if (post) {
-          // 通知を作成（自分の投稿へのリアクションは除外される）
-          await createNotification(post.user_id, user.id, postId, emoji);
-        }
+        await notifyPostAuthor(supabase, postId, user.id, emoji);
       }
     } else {
       // Add new reaction
@@ -98,20 +108,7 @@ export async function toggleReaction(postId: string, emoji: string) {
         return { success: false, error: "リアクションの追加に失敗しました" };
       }
 
-      // 投稿者のIDを取得して通知を作成
-      const { data: post, error: postError } = await supabase
-        .from("posts")
-        .select("user_id")
-        .eq("id", postId)
-        .single();
-
-      if (postError) {
-        console.error("Error fetching post:", postError);
-        // 通知作成の失敗はリアクション処理自体には影響させない
-      } else if (post) {
-        // 通知を作成（自分の投稿へのリアクションは除外される）
-        await createNotification(post.user_id, user.id, postId, emoji);
-      }
+      await notifyPostAuthor(supabase, postId, user.id, emoji);
     }
 
     // Revalidate pages that show this post
