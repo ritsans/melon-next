@@ -5,7 +5,7 @@ import Image from "next/image";
 import { X, Upload, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { validateImage } from "@/lib/images";
+import { validateImage } from "@/lib/image-utils.client";
 
 interface ImageUploaderProps {
   images: File[];
