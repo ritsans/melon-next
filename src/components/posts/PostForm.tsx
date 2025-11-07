@@ -13,11 +13,12 @@ import { FormError } from "@/components/ui/form-error";
 import { useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { PRESET_TAGS, normalizeTag } from "@/lib/tags";
+import { ImageUploader } from "@/components/posts/ImageUploader";
 
 type PostFormData = z.infer<typeof postSchema>;
 
 type PostFormProps = {
-  onSubmit: (data: PostFormData) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (data: PostFormData & { images?: File[] }) => Promise<{ success: boolean; error?: string }>;
   onCancel?: () => void;
 };
 
@@ -26,6 +27,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [customTag, setCustomTag] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
 
   const {
     register,
@@ -77,11 +79,12 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
   const handleFormSubmit = (data: PostFormData) => {
     setError(null);
     startTransition(async () => {
-      const result = await onSubmit(data);
+      const result = await onSubmit({ ...data, images });
       if (result.success) {
         reset();
         setCustomTag("");
         setShowCustomInput(false);
+        setImages([]);
         onCancel?.();
       } else {
         setError(result.error || "投稿に失敗しました");
@@ -106,6 +109,12 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
           <FormError error={errors.content?.message} />
           <p className="text-sm text-neutral-500">{contentLength} / 500</p>
         </div>
+      </div>
+
+      {/* Image Upload */}
+      <div className="space-y-2">
+        <Label>画像（任意・最大4枚）</Label>
+        <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
       </div>
 
       {/* Tag Selection */}

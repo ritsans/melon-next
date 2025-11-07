@@ -5,11 +5,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { postSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import type { Reaction } from "@/lib/reactions";
+import { uploadImages, deletePostWithImages } from "@/lib/images";
 
 export type PostWithProfile = {
   id: string;
   content: string;
   tags: string[];
+  image_urls?: string[] | null;
   created_at: string | null;
   user_id: string;
   profile: {
@@ -34,6 +36,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       id,
       content,
       tags,
+      image_urls,
       created_at,
       user_id,
       profile:profiles(username, display_name, avatar_url),
@@ -53,6 +56,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       id: post.id,
       content: post.content,
       tags: post.tags,
+      image_urls: post.image_urls as string[] | null,
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
@@ -76,6 +80,7 @@ export async function getPostsByUser(userId: string): Promise<PostWithProfile[]>
       id,
       content,
       tags,
+      image_urls,
       created_at,
       user_id,
       profile:profiles(username, display_name, avatar_url),
@@ -96,6 +101,7 @@ export async function getPostsByUser(userId: string): Promise<PostWithProfile[]>
       id: post.id,
       content: post.content,
       tags: post.tags,
+      image_urls: post.image_urls as string[] | null,
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
@@ -119,6 +125,7 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
       id,
       content,
       tags,
+      image_urls,
       created_at,
       user_id,
       profile:profiles(username, display_name, avatar_url),
@@ -139,6 +146,7 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
       id: post.id,
       content: post.content,
       tags: post.tags,
+      image_urls: post.image_urls as string[] | null,
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
@@ -149,13 +157,13 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
 
 /**
  * Create a new post
- * @param formData - Post content and tags
+ * @param formData - Post content, tags, and optional images
  * @returns Success status and error message if any
  */
-export async function createPost(formData: { content: string; tags: string[] }) {
+export async function createPost(formData: { content: string; tags: string[]; images?: File[] }) {
   try {
-    // Validate form data
-    const validatedData = postSchema.parse(formData);
+    // Validate form data (text only)
+    const validatedData = postSchema.parse({ content: formData.content, tags: formData.tags });
 
     // Get current user
     const user = await getCurrentUser();
@@ -166,10 +174,26 @@ export async function createPost(formData: { content: string; tags: string[] }) 
     // Create Supabase client
     const supabase = await createClient();
 
-    // Insert post
+    // Generate temporary post ID for image folder
+    const tempPostId = crypto.randomUUID();
+
+    // Upload images if provided
+    let imageUrls: string[] | undefined;
+    if (formData.images && formData.images.length > 0) {
+      try {
+        imageUrls = await uploadImages(formData.images, tempPostId);
+      } catch (uploadError) {
+        console.error("Error uploading images:", uploadError);
+        return { success: false, error: "画像のアップロードに失敗しました" };
+      }
+    }
+
+    // Insert post with image URLs
     const { error } = await supabase.from("posts").insert({
+      id: tempPostId,
       content: validatedData.content,
       tags: validatedData.tags,
+      image_urls: imageUrls,
       user_id: user.id,
     });
 
@@ -204,10 +228,10 @@ export async function deletePost(postId: string) {
     // Create Supabase client
     const supabase = await createClient();
 
-    // Get post details before deletion to revalidate the profile page
+    // Get post details before deletion (including image URLs and profile info)
     const { data: post, error: fetchError } = await supabase
       .from("posts")
-      .select("user_id, profiles!inner(username)")
+      .select("user_id, image_urls, profiles!inner(username)")
       .eq("id", postId)
       .single();
 
@@ -216,11 +240,11 @@ export async function deletePost(postId: string) {
       return { success: false, error: "投稿が見つかりませんでした" };
     }
 
-    // Delete post (RLS policy ensures user can only delete their own posts)
-    const { error } = await supabase.from("posts").delete().eq("id", postId);
-
-    if (error) {
-      console.error("Error deleting post:", error);
+    // Delete post and associated images
+    try {
+      await deletePostWithImages(postId, (post.image_urls as string[] | null) || undefined);
+    } catch (deleteError) {
+      console.error("Error deleting post with images:", deleteError);
       return { success: false, error: "投稿の削除に失敗しました" };
     }
 
