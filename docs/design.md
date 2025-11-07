@@ -138,13 +138,14 @@ CREATE TABLE posts (
 );
 
 -- リアクションテーブル
+-- 注：1投稿につき1リアクションのみ許可（排他的選択）
 CREATE TABLE reactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   emoji TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(post_id, user_id, emoji)
+  UNIQUE(post_id, user_id)  -- emojiを除外し、1投稿1リアクションを保証
 );
 
 -- タグテーブル（固定リスト用）
@@ -329,20 +330,25 @@ const deleteImage = async (imagePath: string) => {
 
 #### 3. リアクションAPI
 ```typescript
-// リアクション追加
+// リアクション追加/変更（1投稿1リアクションのため、upsertで既存リアクションを上書き）
 const { data, error } = await supabase
   .from('reactions')
-  .upsert({
-    post_id: postId,
-    user_id: userId,
-    emoji: '👏'
-  });
+  .upsert(
+    {
+      post_id: postId,
+      user_id: userId,
+      emoji: '👏'
+    },
+    {
+      onConflict: 'post_id,user_id'  // 同一投稿への既存リアクションを上書き
+    }
+  );
 
 // リアクション削除
 const { error } = await supabase
   .from('reactions')
   .delete()
-  .match({ post_id: postId, user_id: userId, emoji: '👏' });
+  .match({ post_id: postId, user_id: userId });  // emojiは不要
 ```
 
 #### 4. 通知API
@@ -410,7 +416,8 @@ const FIXED_TAGS = [
 
 #### 3. リアクション絵文字
 ```typescript
-const REACTION_EMOJIS = ['👏', '💖', '🤣', '🤔', '👍'];
+// 1投稿につき1リアクションのみ選択可能（排他的選択）
+const REACTION_EMOJIS = ['👏', '💖', '🤣'];
 ```
 
 #### 4. 通知テキスト生成

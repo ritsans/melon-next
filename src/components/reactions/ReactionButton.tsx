@@ -9,6 +9,7 @@ type ReactionButtonProps = {
   emoji: string;
   count: number;
   userReacted: boolean;
+  userCurrentReaction?: string; // ユーザーが現在選択しているリアクション（1投稿1リアクション）
 };
 
 export function ReactionButton({ postId, emoji, count, userReacted }: ReactionButtonProps) {
@@ -17,9 +18,19 @@ export function ReactionButton({ postId, emoji, count, userReacted }: ReactionBu
   const [optimisticCount, setOptimisticCount] = useState(count);
 
   const handleClick = () => {
+    // 1投稿1リアクションのため、異なるリアクションを選択した場合の最適化UI更新
+    const wasReacted = optimisticUserReacted;
+
     // Optimistic UI update
-    setOptimisticUserReacted(!optimisticUserReacted);
-    setOptimisticCount(optimisticUserReacted ? optimisticCount - 1 : optimisticCount + 1);
+    if (wasReacted) {
+      // 同じリアクションをクリック → 削除
+      setOptimisticUserReacted(false);
+      setOptimisticCount(optimisticCount - 1);
+    } else {
+      // 新しいリアクションを選択
+      setOptimisticUserReacted(true);
+      setOptimisticCount(optimisticCount + 1);
+    }
 
     startTransition(async () => {
       const result = await toggleReaction(postId, emoji);
