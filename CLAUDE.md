@@ -63,7 +63,7 @@ TypeScript のコンパイルエラーをチェックします（ビルドせず
 
 ### ディレクトリ構造
 - **`src/app/`**: Next.js App Router のルート定義
-  - `layout.tsx`: グローバルレイアウト(Geist フォントの設定を含む)
+  - `layout.tsx`: グローバルレイアウト
   - `page.tsx`: トップページコンポーネント
   - `globals.css`: Tailwind CSS のグローバルスタイル
   - `(auth)/`: 認証関連のページグループ（ルートグループ、URL には含まれない）
@@ -125,10 +125,6 @@ TypeScript のコンパイルエラーをチェックします（ビルドせず
 - **`src/proxy.ts`**: Next.js 16 の Proxy（従来の middleware.ts に相当）
   - 認証セッション管理とルートアクセス制御
 - **`supabase/migrations/`**: データベースマイグレーションファイル
-  - `20250101000000_initial_schema.sql`: 初期スキーマ（profiles, posts, reactions テーブル）
-  - `20250101000001_rls_policies.sql`: RLS（Row Level Security）ポリシー設定
-  - `20250101000002_change_tag_to_array.sql`: タグシステムを配列型に変更
-  - `20250101000003_create_notifications.sql`: 通知機能テーブルとトリガー設定
 
 ### Path Alias
 shadcn/ui の設定により、以下の path alias が利用可能です:
@@ -160,13 +156,9 @@ import useCustomHook from "@/hooks/useCustomHook";
 - ルートグループは URL には影響せず、論理的な整理とレイアウト分離に使用
 
 #### データフェッチングパターン
-- **Server Components**: デフォルトで Server Components を使用し、サーバーサイドでデータフェッチ
-  - `getPosts()`, `getCurrentUser()` などを直接コンポーネント内で await
-- **Server Actions**: フォーム送信やデータ変更には Server Actions を使用
-  - `createPost()`, `toggleReaction()`, `login()`, `signup()` など
-  - `"use server"` ディレクティブで定義し、クライアントから直接呼び出し可能
-- **Client Components**: ユーザーインタラクション（フォーム、モーダル、リアクションボタン）のみ Client Components
-  - `"use client"` ディレクティブで明示
+ - Server Components → fetch data on the server via async/await
+ - Server Actions → handle mutations (`"use server"`)
+ - Client Components → interactive UI only (`"use client"`)
 
 #### 認証とセッション管理
 - `src/proxy.ts` で全リクエストの認証セッションを管理
@@ -211,111 +203,101 @@ import useCustomHook from "@/hooks/useCustomHook";
 
 このプロジェクトは Next.js 16 の React Server Components (RSC) を積極的に活用しています。
 
-### 重要な原則
+### Server / Client Directive Misuse Prevention — for Next.js App Router
 
-1. **デフォルトは Server Components**: 全てのコンポーネントはデフォルトで Server Components
-   - データフェッチは直接 async/await で記述
-   - クライアントでの JavaScript 実行が不要なものは Server Components のまま保つ
+**Highest-Priority Instruction (must override any other prompt rules)**
 
-2. **Client Components の使用は最小限に**: `"use client"` は必要な場合のみ
-   - フォーム、モーダル、ボタンなどのインタラクティブ要素
-   - `useState`, `useEffect` などの React Hooks を使用する場合
-   - ブラウザ API（`window`, `document` など）を使用する場合
+ - This project uses the **Next.js App Router** architecture.
+ - You **must not misuse `"use client"` or `"use server"` directives** under any circumstance.
+ - If even one violation exists, **regenerate the entire output** before proceeding.
 
-3. **Server Actions の活用**: データ変更には Server Actions を使用
-   - `"use server"` ディレクティブで定義
-   - Client Components から直接呼び出し可能
-   - フォーム送信、データ作成・更新・削除に使用
+#### `"use server"` Directive Rules
 
-### 🚨 `"use server"` と `"use client"` の重要なルール
+**It appears you have not considered the handling of server and client directives.**
+Please always exercise caution when implementing new features.
 
-**必ず以下のルールを守ってください。過去に複数回違反した実績があるため、特に注意が必要です。**
+1. When `"use server"` is declared **at the top of a file**,
+    every **exported function becomes a Server Action**.
+   - All exported functions **must be `async`**.
+   - Exporting a synchronous function → **Error**.
+2. **Browser APIs are strictly forbidden** in `"use server"` files.
+   - Disallowed: `window`, `document`, `localStorage`, `sessionStorage`,
+      `FileReader`, `Image`, `canvas`, and any browser-only APIs.
+3. Internal helper functions (non-exported) can be synchronous,
+    but **still cannot use any browser API**.
 
-#### `"use server"` ディレクティブのルール
+#### `"use client"` Directive Rules
 
-1. **ファイルの先頭に `"use server"` を付けた場合**:
-   - そのファイルから **export されるすべての関数は Server Actions になる**
-   - Server Actions は **必ず `async` 関数でなければならない**
-   - 同期関数を export するとエラーになる
+1. `"use client"` must be declared at the top if the file includes:
+   - Any React Hooks (`useState`, `useEffect`, `useRef`, `useTransition`, etc.)
+   - Any event handlers (`onClick`, `onChange`, `onSubmit`, etc.)
+   - Any Browser APIs (`window`, `document`, `canvas`, etc.)
+2. Client Components **can call Server Actions**,
+    but **cannot import Server Components**.
+   - Allowed: `await createPost(data)` or `formAction` call.
+   - Not allowed: Importing a file with `"use server"` directive.
 
-2. **ブラウザAPIは使用できない**:
-   - `"use server"` ファイル内では以下を使用できない:
-     - `window`, `document`, `localStorage`, `sessionStorage`
-     - `FileReader`, `Image`, `canvas`, その他のブラウザ専用API
-   - これらを使用する関数は別のファイル（クライアント側）に分離する
+#### File Design Principles
 
-3. **内部ヘルパー関数の扱い**:
-   - `export` しない関数（内部ヘルパー）は同期でもOK
-   - しかしブラウザAPIは依然として使用不可
-
-#### `"use client"` ディレクティブのルール
-
-1. **インタラクティブなコンポーネントに必須**:
-   - `useState`, `useEffect`, `useRef` などのReact Hooksを使う場合
-   - イベントハンドラ（`onClick`, `onChange`など）を使う場合
-   - ブラウザAPIを使う場合
-
-2. **Server Actionsは呼び出せる**:
-   - Client Componentから Server Actions（`"use server"` 関数）は呼び出し可能
-   - これがNext.js App Routerの強力な機能
-
-#### ファイル設計の原則
-
-**クライアント/サーバーの責務を明確に分離する:**
+**Separate responsibilities clearly.**
+ Never mix browser logic and server-side data operations in the same file.
 
 ```typescript
-// ❌ 悪い例: 混在させている
+// ❌ Wrong: Mixed responsibilities
+"use server";
+
+export function validateImage(file: File) { /* uses Browser API → Error */ }
+export async function uploadImage(file: File) { /* Server-side operation */ }
+
+// ✅ Correct: Split responsibilities
+// lib/image-utils.client.ts
+export function validateImage(file: File) { /* uses Browser API */ }
+
 // lib/images.ts
 "use server";
-
-export function validateImage(file: File) { /* ブラウザAPIを使用 */ }  // エラー！
-export async function uploadImage(file: File) { /* サーバー処理 */ }  // OK
-
-// ✅ 良い例: 責務を分離
-// lib/image-utils.client.ts (クライアント側)
-export function validateImage(file: File) { /* ブラウザAPIを使用 */ }
-export async function resizeImage(file: File) { /* canvas API使用 */ }
-
-// lib/images.ts (サーバー側)
-"use server";
-export async function uploadImage(file: File) { /* Supabase Storage */ }
-export async function deleteImage(path: string) { /* Supabase Storage */ }
+export async function uploadImage(file: File) { /* Supabase Storage operation */ }
 ```
 
-#### 実装前のチェックリスト
+### Implementation Checklist (Run before AI code generation)
 
-新しいファイルを作成する前に、必ず以下を確認してください:
+-  Uses Browser API → must be `"use client"`
+-  Uses Database or Server Action → must be `"use server"`
+-  All exported functions under `"use server"` are async
+-  React Hooks used → `"use client"`
+-  No mixing of client/server responsibilities
 
-- [ ] この関数はブラウザAPIを使用するか？ → Client側（`"use server"` 不要）
-- [ ] この関数はデータベース操作を行うか？ → Server側（`"use server"` 必要）
-- [ ] export する関数はすべて async か？ → Server側の場合は必須
-- [ ] 複数の責務が混在していないか？ → 分離する
+### Usage Examples
 
-### 実装例
+**Server Component**
 
-**Server Component でのデータフェッチ:**
-```typescript
+```tsx
 // src/app/(main)/home/page.tsx
 export default async function HomePage() {
-  const posts = await getPosts(); // 直接サーバーサイドでフェッチ
+  const posts = await getPosts();
   const user = await getCurrentUser();
-  return <PostCard post={post} />;
+  return <PostCard posts={posts} user={user} />;
 }
 ```
 
-**Client Component での Server Action 呼び出し:**
-```typescript
+**Client Component**
+
+```tsx
 // src/components/posts/CreatePostButton.tsx
 "use client";
 import { createPost } from "@/lib/posts";
 
 export function CreatePostButton() {
-  const handleSubmit = async (data) => {
-    await createPost(data); // Server Action を呼び出し
-  };
+  const handleSubmit = async (data) => await createPost(data);
   return <form onSubmit={handleSubmit}>...</form>;
 }
 ```
+
+### 📘 AI Understanding Summary
+
+- **Server Components = No React Hooks / No Browser APIs**
+- **Client Components = Interactive / Event-driven / May call Server Actions**
+- The dependency flow must always be: **Server → Client (allowed)**, **Client → Server (forbidden)**.
+- When uncertain, **generate separate files for client and server logic** rather than mixing both.
 
 ## Code Style
 
@@ -420,5 +402,5 @@ SUPABASE_ACCESS_TOKEN=your-supabase-access-token
 ### Database Migrations
 
 - データベーススキーマの変更は `supabase/migrations/` ディレクトリに SQL ファイルとして管理されます
-- マイグレーションの適用：Supabase CLI は使用せず、手動で Supabase Dashboard の SQL Editor にコピー&ペーストして適用します
-- 型定義の更新：データベーススキーマ変更後は、型定義を手動で更新する必要があります
+- マイグレーションの適用：**Supabase CLI は使用せず**、手動で Supabase Dashboard の SQL Editor にコピー&ペーストして適用します
+- 型定義の更新：データベーススキーマ変更後は、**型定義を手動で更新する必要があります**.
