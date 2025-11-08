@@ -759,21 +759,26 @@ interface ImageGalleryProps {
 // 4枚: 2x2（均等グリッド）
 ```
 
-#### ImageLightbox コンポーネント
+#### ImageLightbox 実装（yet-another-react-lightbox使用）
 ```typescript
-// components/posts/ImageLightbox.tsx
-interface ImageLightboxProps {
-  images: string[];
-  initialIndex: number;
-  onClose: () => void;
-}
+// yet-another-react-lightbox ライブラリを使用
+// https://yet-another-react-lightbox.com/
 
-// 機能:
-// - 画像の拡大表示
+// パッケージインストール:
+// pnpm add yet-another-react-lightbox
+
+// ImageGallery コンポーネント内で使用:
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+
+// 機能（ライブラリ提供）:
+// - 画像の拡大表示（フルスクリーン）
 // - スワイプジェスチャー対応（モバイル）
 // - 矢印キー/ボタンでナビゲーション
 // - ESCキーで閉じる
 // - 画像インデックス表示（例: 1/4）
+// - ズーム機能
+// - アニメーション効果
 ```
 
 #### ImageUploader コンポーネント
