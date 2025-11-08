@@ -17,6 +17,7 @@ import { tagLabel } from "@/lib/tags";
 import { ReactionPanel } from "@/components/reactions/ReactionPanel";
 import { DeletePostDialog } from "./DeletePostDialog";
 import { ImageGallery } from "./ImageGallery";
+import { ImageLightbox } from "./ImageLightbox";
 import { MoreVertical, Trash2 } from "lucide-react";
 
 type PostCardProps = {
@@ -26,8 +27,15 @@ type PostCardProps = {
 
 export function PostCard({ post, currentUserId }: PostCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const displayName = post.profile.display_name || post.profile.username;
   const isOwnPost = currentUserId === post.user_id;
+
+  const handleImageClick = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
 
   return (
     <Card className="w-full">
@@ -99,7 +107,15 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
 
           {/* Images */}
           {post.image_urls && post.image_urls.length > 0 && (
-            <ImageGallery images={post.image_urls} />
+            <>
+              <ImageGallery images={post.image_urls} onImageClick={handleImageClick} />
+              <ImageLightbox
+                open={lightboxOpen}
+                close={() => setLightboxOpen(false)}
+                images={post.image_urls}
+                index={lightboxIndex}
+              />
+            </>
           )}
 
           {/* Reactions */}
