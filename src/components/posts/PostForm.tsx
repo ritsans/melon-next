@@ -2,8 +2,7 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { postSchema } from "@/lib/validations";
-import type { z } from "zod";
+import { type PostFormData, postSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -14,8 +13,6 @@ import { useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { PRESET_TAGS, normalizeTag } from "@/lib/tags";
 import { ImageUploader } from "@/components/posts/ImageUploader";
-
-type PostFormData = z.infer<typeof postSchema>;
 
 type PostFormProps = {
   onSubmit: (data: PostFormData & { images?: File[] }) => Promise<{ success: boolean; error?: string }>;

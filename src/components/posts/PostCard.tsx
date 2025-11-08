@@ -16,6 +16,7 @@ import type { PostWithProfile } from "@/lib/posts";
 import { tagLabel } from "@/lib/tags";
 import { ReactionPanel } from "@/components/reactions/ReactionPanel";
 import { DeletePostDialog } from "./DeletePostDialog";
+import { ImageGallery } from "./ImageGallery";
 import { MoreVertical, Trash2 } from "lucide-react";
 
 type PostCardProps = {
@@ -95,6 +96,11 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
         {/* Post Content - offset to align with user info */}
         <div className="ml-[52px] space-y-4">
           <p className="whitespace-pre-wrap wrap-break-word text-neutral-900">{post.content}</p>
+
+          {/* Images */}
+          {post.image_urls && post.image_urls.length > 0 && (
+            <ImageGallery images={post.image_urls} />
+          )}
 
           {/* Reactions */}
           <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} />

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  */
 
 // バケット名の定数
-const BUCKET_NAME = "gazo-images";
+const BUCKET_NAME = "gazo_images";
 
 /**
  * 単一画像をSupabase Storageにアップロード
@@ -126,7 +126,7 @@ export async function deletePostWithImages(
 function getImagePathFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
-    // URLパスから "storage/v1/object/public/gazo-images/" を削除
+    // URLパスから "storage/v1/object/public/gazo_images/" を削除
     const path = urlObj.pathname.replace(
       `/storage/v1/object/public/${BUCKET_NAME}/`,
       "",
