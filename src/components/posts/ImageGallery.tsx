@@ -16,10 +16,7 @@ export function ImageGallery({ images, onImageClick }: ImageGalleryProps) {
   if (images.length === 1) {
     return (
       <div className="relative w-full overflow-hidden rounded-lg">
-        <div
-          className="relative aspect-video w-full cursor-pointer"
-          onClick={() => onImageClick?.(0)}
-        >
+        <div className="relative aspect-video w-full h-96 cursor-pointer" onClick={() => onImageClick?.(0)}>
           <Image
             src={images[0]}
             alt="投稿画像"
