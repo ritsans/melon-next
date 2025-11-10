@@ -186,7 +186,7 @@ export function ImageUploader({
 
       {/* 画像プレビュー */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-4 gap-2">
           {images.map((file, index) => (
             <div
               key={`${file.name}-${index}`}
