@@ -23,9 +23,10 @@ import { MoreVertical, Trash2 } from "lucide-react";
 type PostCardProps = {
   post: PostWithProfile;
   currentUserId?: string;
+  hideReactions?: boolean;
 };
 
-export function PostCard({ post, currentUserId }: PostCardProps) {
+export function PostCard({ post, currentUserId, hideReactions = false }: PostCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -119,7 +120,9 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           )}
 
           {/* Reactions */}
-          <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} />
+          {!hideReactions && (
+            <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} isOwnPost={isOwnPost} />
+          )}
         </div>
       </CardContent>
     </Card>

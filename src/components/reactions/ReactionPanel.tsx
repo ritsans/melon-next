@@ -10,9 +10,10 @@ type ReactionPanelProps = {
   postId: string;
   reactions: Reaction[];
   currentUserId?: string;
+  isOwnPost?: boolean;
 };
 
-export function ReactionPanel({ postId, reactions, currentUserId }: ReactionPanelProps) {
+export function ReactionPanel({ postId, reactions, currentUserId, isOwnPost = false }: ReactionPanelProps) {
   // Aggregate reactions by emoji
   const reactionCounts = aggregateReactions(reactions, currentUserId);
 
@@ -58,7 +59,7 @@ export function ReactionPanel({ postId, reactions, currentUserId }: ReactionPane
   });
 
   const handleReactionClick = (emoji: string) => {
-    if (!currentUserId) return;
+    if (!currentUserId || isOwnPost) return;
 
     // オプティミスティックUI更新
     if (optimisticReaction === emoji) {
@@ -82,8 +83,10 @@ export function ReactionPanel({ postId, reactions, currentUserId }: ReactionPane
   return (
     <div className="flex flex-wrap gap-2">
       {displayEmojis.map(({ emoji, count, userReacted }) => {
-        // Only show buttons with count > 0 or if user can add reaction
-        if (count === 0 && !currentUserId) {
+        // 表示条件:
+        // - count > 0: 誰かがリアクション済み（自分の投稿でも他人の投稿でも表示）
+        // - count === 0 && currentUserId && !isOwnPost: ログイン中で他人の投稿（リアクション追加可能）
+        if (count === 0 && (!currentUserId || isOwnPost)) {
           return null;
         }
 
@@ -92,11 +95,11 @@ export function ReactionPanel({ postId, reactions, currentUserId }: ReactionPane
             key={emoji}
             type="button"
             onClick={() => handleReactionClick(emoji)}
-            disabled={isPending}
+            disabled={isPending || isOwnPost}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm transition-colors",
-              "hover:bg-neutral-100 active:bg-neutral-200",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
+              !isOwnPost && "hover:bg-neutral-100 active:bg-neutral-200",
+              isOwnPost ? "cursor-not-allowed" : "disabled:opacity-50 disabled:cursor-not-allowed",
               userReacted
                 ? "border-blue-500 bg-blue-50 text-blue-700"
                 : "border-neutral-300 bg-white text-neutral-700",

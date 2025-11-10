@@ -42,7 +42,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       {/* プロフィールカード */}
       <Card>
         <CardHeader>
@@ -98,7 +98,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         ) : (
           <div className="space-y-4">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} />
+              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} hideReactions={true} />
             ))}
           </div>
         )}
