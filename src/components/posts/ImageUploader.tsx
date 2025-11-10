@@ -22,8 +22,8 @@ export function ImageUploader({
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draggedIndexRef = useRef<number | null>(null);
 
   // ドラッグ&ドロップ - ドラッグオーバー
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -99,30 +99,33 @@ export function ImageUploader({
   };
 
   // 画像の並び替え - ドラッグ開始
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    draggedIndexRef.current = index;
   };
 
   // 画像の並び替え - ドラッグオーバー
   const handleReorderDragOver = (e: DragEvent<HTMLDivElement>, index: number) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
 
-    if (draggedIndex === null || draggedIndex === index) return;
+    if (draggedIndexRef.current === null || draggedIndexRef.current === index) return;
 
     const newImages = [...images];
-    const draggedImage = newImages[draggedIndex];
+    const draggedImage = newImages[draggedIndexRef.current];
 
     // 配列から削除して新しい位置に挿入
-    newImages.splice(draggedIndex, 1);
+    newImages.splice(draggedIndexRef.current, 1);
     newImages.splice(index, 0, draggedImage);
 
     onImagesChange(newImages);
-    setDraggedIndex(index);
+    draggedIndexRef.current = index;
   };
 
   // 画像の並び替え - ドラッグ終了
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
+  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    draggedIndexRef.current = null;
   };
 
   // 画像プレビューURL生成
@@ -191,12 +194,11 @@ export function ImageUploader({
             <div
               key={`${file.name}-${index}`}
               draggable
-              onDragStart={() => handleDragStart(index)}
+              onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleReorderDragOver(e, index)}
-              onDragEnd={handleDragEnd}
+              onDragEnd={(e) => handleDragEnd(e)}
               className={cn(
-                "relative aspect-square rounded-lg overflow-hidden border-2 cursor-move transition-opacity",
-                draggedIndex === index ? "opacity-50" : "opacity-100",
+                "relative aspect-square rounded-lg overflow-hidden border-2 cursor-move",
                 "hover:border-primary",
               )}
             >

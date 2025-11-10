@@ -22,6 +22,7 @@ export function ImageLightbox({ open, close, images, index }: ImageLightboxProps
       close={close}
       slides={slides}
       index={index}
+      controller={{ closeOnBackdropClick: true }}
       styles={{
         // change backgroundColor for this code!
         container: { backgroundColor: "rgba(20, 20, 20, 0.8)" },
