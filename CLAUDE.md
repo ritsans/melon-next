@@ -14,10 +14,28 @@ All essential documentation for this project is located in the docs/ directory.
 Before starting any implementation work or performing any project-related tasks, please make sure to review and fully understand the following files:
 
  - **docs/requirements.md** — Defines the project requirements, business logic, and system constraints.
-
  - **docs/design.md** — Provides detailed technical design information, including system architecture, data models, and API specifications.
-
  - **docs/tasks.md** — Lists planned features, ongoing tasks, and completed work for project tracking.
+
+## Branch Strategy
+
+This project follows a feature-branch workflow to maintain clarity in learning and development.
+
+### When to Create Branches
+
+Before starting a new implementation step, create a branch using the following naming conventions:
+
+- **認証機能**: `feature/auth`
+- **画像アップロード**: `feature/img-upload`
+- **データベース統合**: `feature/database`
+- **API実装**: `feature/api-[機能名]`
+
+### When to Create Branches
+
+- **Suggest** branch name/creation before starting new implementation/steps
+- **Recommend** merging when basic implementation/steps are completed
+- These are suggestions only - branch creation and merge decisions remain with the user
+- Do not automatically(accept edits on) execute git commands
 
 ## Development Commands
 
@@ -62,72 +80,13 @@ TypeScript のコンパイルエラーをチェックします（ビルドせず
 ## Code Architecture
 
 ### ディレクトリ構造
-- **`src/app/`**: Next.js App Router のルート定義
-  - `layout.tsx`: グローバルレイアウト
-  - `page.tsx`: トップページコンポーネント
-  - `globals.css`: Tailwind CSS のグローバルスタイル
-  - `(auth)/`: 認証関連のページグループ（ルートグループ、URL には含まれない）
-    - `login/page.tsx`: ログインページ
-    - `signup/page.tsx`: サインアップページ
-    - `onboarding/page.tsx`: 初回登録後のプロフィール設定ページ
-    - `forgot-password/page.tsx`: パスワードリセット依頼ページ
-    - `reset-password/page.tsx`: パスワード再設定ページ
-  - `(main)/`: メインコンテンツのページグループ（ルートグループ、URL には含まれない）
-    - `layout.tsx`: メインレイアウト（Header + Sidebar 構成）
-    - `home/page.tsx`: ホームフィード（投稿一覧表示）
-    - `notifications/page.tsx`: 通知一覧ページ
-    - `tags/[slug]/page.tsx`: タグ別投稿表示ページ（動的ルート）
-  - `api/`: API ルート
-    - `test-db/route.ts`: データベース接続テスト用 API
 - **`src/lib/`**: 共通ユーティリティ関数とヘルパー
-  - `utils.ts`: `cn()` 関数 - clsx と tailwind-merge を組み合わせた Tailwind CSS のクラス名マージユーティリティ
-  - `validations.ts`: Zod バリデーションスキーマ定義（ログイン、サインアップ、投稿フォームなど）
-  - `auth.ts`: 認証ヘルパー関数（login, signup, logout, getCurrentUser, getProfile）
-  - `posts.ts`: 投稿関連のロジック（createPost, getPosts, deletePost, updatePost）
-  - `reactions.ts`: リアクション機能のロジック（toggleReaction）
-  - `tags.ts`: タグ正規化とプリセットタグ管理（normalizeTag, PRESET_TAGS, TAG_LABELS, tagLabel）
-  - `notifications.ts`: 通知機能のロジック（getNotifications, markAsRead, markAllAsRead）
-  - `reaction-utils.ts`: リアクション表示用のユーティリティ関数
-  - `errors.ts`: エラーハンドリングユーティリティ（handleError, AppError）
-  - `supabase/`: Supabase クライアント設定
-    - `client.ts`: クライアントサイド用 Supabase クライアント
-    - `server.ts`: サーバーサイド用 Supabase クライアント
-    - `database.types.ts`: データベース型定義（Supabase CLI で自動生成）
 - **`src/components/`**: React コンポーネント
-  - `ui/`: shadcn/ui コンポーネント
-    - `button.tsx`, `input.tsx`, `label.tsx`, `card.tsx`, `dialog.tsx`, `avatar.tsx`, `dropdown-menu.tsx`
-    - `badge.tsx`: バッジコンポーネント（タグ表示用）
-    - `checkbox.tsx`: チェックボックスコンポーネント（オンボーディングのタグ選択用）
-    - `form-error.tsx`: フォームエラー表示コンポーネント
-    - `error-message.tsx`: 汎用エラーメッセージコンポーネント
-    - `textarea.tsx`: テキストエリアコンポーネント
-  - `auth/`: 認証関連コンポーネント
-    - `LoginForm.tsx`: ログインフォーム
-    - `SignupForm.tsx`: サインアップフォーム
-    - `OnboardingForm.tsx`: オンボーディングフォーム
-    - `ForgotPasswordForm.tsx`: パスワードリセット依頼フォーム
-    - `ResetPasswordForm.tsx`: パスワード再設定フォーム
-  - `layout/`: レイアウトコンポーネント
-    - `Header.tsx`: グローバルヘッダー（ユーザードロップダウンメニュー含む）
-    - `Sidebar.tsx`: サイドバーナビゲーション（タグフィルター機能含む）
-  - `posts/`: 投稿関連コンポーネント
-    - `PostCard.tsx`: 投稿カード表示コンポーネント
-    - `PostForm.tsx`: 投稿作成・編集フォーム
-    - `CreatePostButton.tsx`: 投稿作成ボタン＆モーダル制御
-    - `DeletePostDialog.tsx`: 投稿削除確認ダイアログ
-  - `notifications/`: 通知関連コンポーネント
-    - `NotificationBell.tsx`: 通知ベルアイコン（未読数表示）
-    - `NotificationDropdown.tsx`: 通知ドロップダウンメニュー
-    - `NotificationItem.tsx`: 個別通知アイテム表示
-  - `reactions/`: リアクション関連コンポーネント
-    - `ReactionButton.tsx`: 個別リアクションボタン
-    - `ReactionPanel.tsx`: リアクションパネル（複数リアクションボタンのグループ）
 - **`src/proxy.ts`**: Next.js 16 の Proxy（従来の middleware.ts に相当）
-  - 認証セッション管理とルートアクセス制御
 - **`supabase/migrations/`**: データベースマイグレーションファイル
 
 ### Path Alias
-shadcn/ui の設定により、以下の path alias が利用可能です:
+shadcn/ui の設定により、以下のような path alias が利用可能です:
 
 ```typescript
 import Component from "@/components/Component";
@@ -164,32 +123,6 @@ import useCustomHook from "@/hooks/useCustomHook";
 - `src/proxy.ts` で全リクエストの認証セッションを管理
 - 認証が必要なページ（`/home` など）へのアクセスは自動的にリダイレクト
 - Supabase SSR パッケージ (`@supabase/ssr`) を使用し、Cookie ベースのセッション管理
-
-#### リアクションシステムの設計
-- 1 投稿につき 1 リアクションのみ付与可能（排他的選択）
-- 複数リアクションの同時付与は不可（意図が不明確になり、通知処理が煩雑化するため）
-- リアクションの種類は 👏（拍手）、💖（ハート）、🤣（笑）の 3 種類
-- 別のリアクションを選択すると、既存のリアクションは自動的に削除される
-- 同じリアクションを再度選択するとリアクションを削除（トグル式）
-- リアクション数の集計とユーザーの既存リアクション取得はサーバーサイドで実行
-- `toggleReaction()` Server Action でリアクションの追加・削除を処理
-
-#### タグシステムの設計
-- プリセットタグ（`PRESET_TAGS`）と カスタムタグ の両方をサポート
-- タグは正規化（`normalizeTag()`）により、大文字小文字やスペースを統一
-- `TAG_LABELS` でタグの日本語表示ラベルを管理
-- 投稿には複数のタグを付与可能（`posts` テーブルの `tags` 配列カラムで管理）
-- Sidebar でタグフィルタリング機能を提供
-- 動的ルート `/tags/[slug]` でタグ別投稿一覧を表示
-
-#### 通知システムの設計
-- リアクションが付けられたときに投稿者に自動通知
-- `notifications` テーブルで通知データを管理
-- データベーストリガーで自動通知作成（`create_reaction_notification()`）
-- Header に通知ベルアイコンを表示し、未読数をリアルタイム表示
-- 通知ドロップダウンで最新 5 件の通知をプレビュー
-- `/notifications` ページで全通知を一覧表示
-- 個別通知の既読管理と一括既読機能
 
 #### エラーハンドリングの設計
 - `src/lib/errors.ts` で統一的なエラーハンドリングユーティリティを提供
@@ -348,37 +281,11 @@ Biome はフォーマットのみに使用され、Lint は無効(ESLint を使�
 
 ## Authentication System
 
-このプロジェクトは Supabase Auth を使用したメール・パスワード認証を実装しています。
-
-### 認証フロー
-
-1. **サインアップ**: `/signup` でメールアドレスとパスワードを登録
-2. **オンボーディング**: `/onboarding` で初回登録後にユーザー名とプロフィール情報、興味タグを設定
-3. **ログイン**: `/login` でメールアドレスとパスワードでログイン
-4. **パスワードリセット**:
-   - `/forgot-password` でパスワードリセット依頼
-   - `/reset-password` でパスワード再設定
-5. **セッション管理**: Supabase が Cookie ベースのセッション管理を自動処理
-6. **アクセス制御**: `src/proxy.ts` で未認証ユーザーの `/home` アクセスをブロック
-
-### 認証関連ファイル
-
-- **`src/lib/auth.ts`**: 認証ヘルパー関数（Server Actions）
-  - `login(data)`: ログイン処理
-  - `signup(data)`: サインアップ処理
-  - `logout()`: ログアウト処理
-  - `getCurrentUser()`: 現在のユーザー取得
-  - `getProfile(userId)`: プロフィール情報取得
-
-- **`src/lib/validations.ts`**: フォームバリデーションスキーマ
-  - `loginSchema`: ログインフォームのバリデーション
-  - `signupSchema`: サインアップフォームのバリデーション
-  - `onboardingSchema`: オンボーディングフォームのバリデーション
-  - `postSchema`: 投稿フォームのバリデーション
+This project implements email and password authentication using Supabase Auth.
 
 ### 環境変数
 
-プロジェクトのルートに `.env.local` ファイルが必要です：
+- `.env.local` file is required in the project root:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
@@ -396,11 +303,10 @@ SUPABASE_ACCESS_TOKEN=your-supabase-access-token
 
 ### Next.js 16 Changes
 
-- Next.js 16（ベータ版）から、`middleware.ts` は非推奨となり、`proxy.ts` に名称が変更されました。
-- 理由は、用語が持つ曖昧さを解消し、その機能の役割をより明確にするためです。
+- Starting with Next.js 16 (beta), `middleware.ts` has been **deprecated** and **renamed to `proxy.ts`**.
 
 ### Database Migrations
 
-- データベーススキーマの変更は `supabase/migrations/` ディレクトリに SQL ファイルとして管理されます
-- マイグレーションの適用：**Supabase CLI は使用せず**、手動で Supabase Dashboard の SQL Editor にコピー&ペーストして適用します
-- 型定義の更新：データベーススキーマ変更後は、**型定義を手動で更新する必要があります**.
+- Database schema changes are managed as SQL files in the `supabase/migrations/` directory
+- Applying migrations: **Do not use the Supabase CLI**; manually copy and paste them into the SQL Editor in the Supabase Dashboard to apply
+- Updating type definitions: After database schema changes, must **manually update type definitions**.
