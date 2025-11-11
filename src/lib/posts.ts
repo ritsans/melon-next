@@ -12,6 +12,7 @@ export type PostWithProfile = {
   content: string;
   tags: string[];
   image_urls?: string[] | null;
+  parent_post_id?: string | null;
   created_at: string | null;
   user_id: string;
   profile: {
