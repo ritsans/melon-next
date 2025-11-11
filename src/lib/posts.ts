@@ -156,6 +156,53 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
 }
 
 /**
+ * Get a single post by ID
+ * @param postId - Post ID to fetch
+ * @returns Post with profile information or null if not found
+ */
+export async function getPostById(postId: string): Promise<PostWithProfile | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      image_urls,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
+    `,
+    )
+    .eq("id", postId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching post by ID:", error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  // Transform the data to match our type
+  return {
+    id: data.id,
+    content: data.content,
+    tags: data.tags,
+    image_urls: data.image_urls as string[] | null,
+    created_at: data.created_at,
+    user_id: data.user_id,
+    profile: Array.isArray(data.profile) ? data.profile[0] : data.profile,
+    reactions: data.reactions || [],
+  };
+}
+
+/**
  * Create a new post
  * @param formData - Post content, tags, and optional images
  * @returns Success status and error message if any

@@ -42,7 +42,7 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
     <Card className="w-full">
       <CardHeader className="pb-2">
         <div className="flex gap-3">
-          {/* User Avatar */}
+          {/* ユーザーアバター */}
           <Link href={`/profile/${post.profile.username}`} className="shrink-0">
             <Avatar className="h-10 w-10">
               <AvatarImage src={post.profile.avatar_url || undefined} alt={post.profile.username} />
@@ -52,7 +52,7 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
             </Avatar>
           </Link>
 
-          {/* User Info and Post Meta */}
+          {/* ユーザー情報と投稿メタ情報 */}
           <div className="flex flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
               <Link
@@ -66,7 +66,7 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
               <span className="text-sm text-neutral-500">{formatRelativeTime(post.created_at)}</span>
             </div>
 
-            {/* Tags */}
+            {/* タグ */}
             <div className="flex items-center gap-2">
               {post.tags.map((tag) => (
                 <Link key={tag} href={`/tags/${tag}`} className="text-sm font-medium text-blue-600 hover:underline">
@@ -76,7 +76,7 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
             </div>
           </div>
 
-          {/* Post Options Menu (only for own posts) */}
+          {/* 投稿オプションメニュー（自分の投稿のみ） */}
           {isOwnPost && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -102,11 +102,11 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
       <DeletePostDialog postId={post.id} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} />
 
       <CardContent className="pt-0">
-        {/* Post Content - offset to align with user info */}
+        {/* 投稿コンテンツ - ユーザー情報に合わせてオフセット */}
         <div className="ml-[52px] space-y-4">
           <p className="whitespace-pre-wrap wrap-break-word text-neutral-900">{post.content}</p>
 
-          {/* Images */}
+          {/* 画像 */}
           {post.image_urls && post.image_urls.length > 0 && (
             <>
               <ImageGallery images={post.image_urls} onImageClick={handleImageClick} />
@@ -119,7 +119,7 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
             </>
           )}
 
-          {/* Reactions */}
+          {/* リアクション */}
           {!hideReactions && (
             <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} isOwnPost={isOwnPost} />
           )}
