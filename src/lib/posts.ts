@@ -6,6 +6,7 @@ import { postSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import type { Reaction } from "@/lib/reactions";
 import { uploadImages, deletePostWithImages } from "@/lib/images";
+import { createReplyNotification } from "@/lib/notifications";
 
 export type PostWithProfile = {
   id: string;
@@ -337,10 +338,10 @@ export async function createReply(formData: { content: string; parentPostId: str
     // Create Supabase client
     const supabase = await createClient();
 
-    // Get parent post to inherit tags
+    // Get parent post to inherit tags and get owner info
     const { data: parentPost, error: parentError } = await supabase
       .from("posts")
-      .select("tags")
+      .select("tags, user_id")
       .eq("id", formData.parentPostId)
       .single();
 
@@ -361,6 +362,9 @@ export async function createReply(formData: { content: string; parentPostId: str
       console.error("Error creating reply:", error);
       return { success: false, error: "返信の作成に失敗しました" };
     }
+
+    // Create reply notification for the parent post owner
+    await createReplyNotification(parentPost.user_id, user.id, formData.parentPostId);
 
     // Revalidate relevant paths
     revalidatePath("/home");

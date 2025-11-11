@@ -17,9 +17,10 @@ interface DeletePostDialogProps {
   postId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void;
 }
 
-export function DeletePostDialog({ postId, open, onOpenChange }: DeletePostDialogProps) {
+export function DeletePostDialog({ postId, open, onOpenChange, onDeleted }: DeletePostDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +32,7 @@ export function DeletePostDialog({ postId, open, onOpenChange }: DeletePostDialo
 
     if (result.success) {
       onOpenChange(false);
+      onDeleted?.(); // 削除成功時にコールバックを実行
     } else {
       setError(result.error || "削除に失敗しました");
     }

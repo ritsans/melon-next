@@ -21,9 +21,10 @@ type ReplyCardProps = {
   reply: PostWithProfile;
   currentUserId?: string;
   depth?: number; // 階層深度（0 = 第1階層, 1 = 第2階層）
+  onDeleted?: () => void; // 削除時のコールバック
 };
 
-export function ReplyCard({ reply, currentUserId, depth = 0 }: ReplyCardProps) {
+export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [replyFormOpen, setReplyFormOpen] = useState(false);
   const [nestedReplies, setNestedReplies] = useState<PostWithProfile[]>([]);
@@ -50,6 +51,20 @@ export function ReplyCard({ reply, currentUserId, depth = 0 }: ReplyCardProps) {
       getReplies(reply.id)
         .then((replies) => setNestedReplies(replies))
         .finally(() => setLoadingReplies(false));
+    }
+  };
+
+  // 返信が削除されたらネストされた返信を再取得 / 親に通知
+  const handleReplyDeleted = () => {
+    if (depth === 0) {
+      // 第1階層：ネストされた返信を再取得
+      setLoadingReplies(true);
+      getReplies(reply.id)
+        .then((replies) => setNestedReplies(replies))
+        .finally(() => setLoadingReplies(false));
+    } else {
+      // 第2階層：親のコールバックを呼び出す
+      onDeleted?.();
     }
   };
 
@@ -104,7 +119,12 @@ export function ReplyCard({ reply, currentUserId, depth = 0 }: ReplyCardProps) {
           )}
         </div>
 
-        <DeletePostDialog postId={reply.id} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} />
+        <DeletePostDialog
+          postId={reply.id}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onDeleted={handleReplyDeleted}
+        />
 
         {/* 返信コンテンツ */}
         <p className="whitespace-pre-wrap wrap-break-word text-sm text-neutral-900">{reply.content}</p>
@@ -139,7 +159,13 @@ export function ReplyCard({ reply, currentUserId, depth = 0 }: ReplyCardProps) {
         {depth === 0 && nestedReplies.length > 0 && (
           <div className="mt-3 space-y-2 border-l-2 border-neutral-300 pl-3">
             {nestedReplies.map((nestedReply) => (
-              <ReplyCard key={nestedReply.id} reply={nestedReply} currentUserId={currentUserId} depth={1} />
+              <ReplyCard
+                key={nestedReply.id}
+                reply={nestedReply}
+                currentUserId={currentUserId}
+                depth={1}
+                onDeleted={handleReplyDeleted}
+              />
             ))}
           </div>
         )}

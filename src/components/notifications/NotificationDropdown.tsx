@@ -8,7 +8,8 @@ import { Loader2 } from "lucide-react";
 
 type Notification = {
   id: string;
-  reaction_emoji: string;
+  type: string; // 'reaction' | 'reply'
+  reaction_emoji: string | null;
   is_read: boolean | null;
   created_at: string | null;
   actor: {

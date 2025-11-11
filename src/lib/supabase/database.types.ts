@@ -21,7 +21,8 @@ export type Database = {
           id: string
           is_read: boolean | null
           post_id: string
-          reaction_emoji: string
+          reaction_emoji: string | null
+          type: string
           user_id: string
         }
         Insert: {
@@ -30,7 +31,8 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           post_id: string
-          reaction_emoji: string
+          reaction_emoji?: string | null
+          type?: string
           user_id: string
         }
         Update: {
@@ -39,7 +41,8 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           post_id?: string
-          reaction_emoji?: string
+          reaction_emoji?: string | null
+          type?: string
           user_id?: string
         }
         Relationships: [

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 /**
- * 通知を作成する
+ * 通知を作成する（リアクション用）
  * @param userId - 通知を受け取るユーザーID（投稿者）
  * @param actorId - リアクションしたユーザーID
  * @param postId - 投稿ID
@@ -27,12 +27,44 @@ export async function createNotification(
     user_id: userId,
     actor_id: actorId,
     post_id: postId,
+    type: "reaction",
     reaction_emoji: reactionEmoji,
     is_read: false,
   });
 
   if (error) {
     console.error("Error creating notification:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * 返信通知を作成する
+ * @param userId - 通知を受け取るユーザーID（元投稿の投稿者）
+ * @param actorId - 返信したユーザーID
+ * @param postId - 返信先の投稿ID
+ */
+export async function createReplyNotification(userId: string, actorId: string, postId: string) {
+  const supabase = await createClient();
+
+  // 自分の投稿への返信には通知を作成しない
+  if (userId === actorId) {
+    return { success: true };
+  }
+
+  const { error } = await supabase.from("notifications").insert({
+    user_id: userId,
+    actor_id: actorId,
+    post_id: postId,
+    type: "reply",
+    reaction_emoji: null,
+    is_read: false,
+  });
+
+  if (error) {
+    console.error("Error creating reply notification:", error);
     return { success: false, error: error.message };
   }
 
@@ -51,6 +83,7 @@ export async function getNotifications(userId: string) {
     .select(
       `
       id,
+      type,
       reaction_emoji,
       is_read,
       created_at,

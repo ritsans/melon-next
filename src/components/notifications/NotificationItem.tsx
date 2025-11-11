@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 type Notification = {
   id: string;
-  reaction_emoji: string;
+  type: string; // 'reaction' | 'reply'
+  reaction_emoji: string | null;
   is_read: boolean | null;
   created_at: string | null;
   actor: {
@@ -90,8 +91,14 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
           <p className="text-sm">
             <span className="font-semibold">{actorName}</span>
             さんがあなたの投稿に
-            <span className="mx-1 text-lg">{notification.reaction_emoji}</span>
-            しました
+            {notification.type === "reply" ? (
+              "返信しました"
+            ) : (
+              <>
+                <span className="mx-1 text-lg">{notification.reaction_emoji}</span>
+                しました
+              </>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">{postPreview}</p>
           <p className="text-xs text-muted-foreground">{getRelativeTime(notification.created_at)}</p>
