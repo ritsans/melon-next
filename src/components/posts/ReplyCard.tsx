@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatRelativeTime } from "@/lib/utils";
 import type { PostWithProfile } from "@/lib/posts";
-import { ReactionPanel } from "@/components/reactions/ReactionPanel";
 import { DeletePostDialog } from "./DeletePostDialog";
 import { MoreVertical, Trash2 } from "lucide-react";
 
@@ -79,16 +78,8 @@ export function ReplyCard({ reply, currentUserId }: ReplyCardProps) {
 
         <DeletePostDialog postId={reply.id} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} />
 
-        {/* リプライコンテンツ */}
+        {/* 返信コンテンツ */}
         <p className="whitespace-pre-wrap wrap-break-word text-sm text-neutral-900">{reply.content}</p>
-
-        {/* リアクション */}
-        <ReactionPanel
-          postId={reply.id}
-          reactions={reply.reactions}
-          currentUserId={currentUserId}
-          isOwnPost={isOwnReply}
-        />
       </div>
     </div>
   );

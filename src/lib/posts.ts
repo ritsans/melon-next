@@ -181,8 +181,7 @@ export async function getReplies(postId: string): Promise<PostWithProfile[]> {
       parent_post_id,
       created_at,
       user_id,
-      profile:profiles(username, display_name, avatar_url),
-      reactions(id, post_id, user_id, emoji, created_at)
+      profile:profiles(username, display_name, avatar_url)
     `,
     )
     .eq("parent_post_id", postId)
@@ -204,7 +203,7 @@ export async function getReplies(postId: string): Promise<PostWithProfile[]> {
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
-      reactions: post.reactions || [],
+      reactions: [], // 返信にはリアクション機能なし
     })) || []
   );
 }
