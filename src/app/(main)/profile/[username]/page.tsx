@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
 import { getProfileByUsername, getCurrentUser } from "@/lib/auth";
-import { getPostsByUser } from "@/lib/posts";
+import { getPostsByUser, getReplies } from "@/lib/posts";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,6 +27,14 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   // ユーザーの投稿を取得
   const posts = await getPostsByUser(profile.id);
+
+  // 各投稿のリプライを取得
+  const postsWithReplies = await Promise.all(
+    posts.map(async (post) => ({
+      post,
+      replies: await getReplies(post.id),
+    })),
+  );
 
   // 現在のユーザーを取得（削除機能のため）
   const currentUser = await getCurrentUser();
@@ -87,9 +95,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
       {/* 投稿一覧 */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">投稿 ({posts.length})</h2>
+        <h2 className="text-lg font-semibold">投稿 ({postsWithReplies.length})</h2>
 
-        {posts.length === 0 ? (
+        {postsWithReplies.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-neutral-500">まだ投稿がありません</p>
@@ -97,8 +105,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </Card>
         ) : (
           <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} hideReactions={true} />
+            {postsWithReplies.map(({ post, replies }) => (
+              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} hideReactions={true} replies={replies} />
             ))}
           </div>
         )}

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPostById } from "@/lib/posts";
+import { getPostById, getReplies } from "@/lib/posts";
 import { getCurrentUser } from "@/lib/auth";
 import { PostCard } from "@/components/posts/PostCard";
 
@@ -20,12 +20,15 @@ export default async function PostDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // リプライを取得
+  const replies = await getReplies(id);
+
   // リアクション用に現在のユーザーを取得
   const user = await getCurrentUser();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
-      <PostCard post={post} currentUserId={user?.id} />
+      <PostCard post={post} currentUserId={user?.id} replies={replies} />
     </div>
   );
 }

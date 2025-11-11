@@ -18,18 +18,22 @@ import { ReactionPanel } from "@/components/reactions/ReactionPanel";
 import { DeletePostDialog } from "./DeletePostDialog";
 import { ImageGallery } from "./ImageGallery";
 import { ImageLightbox } from "./ImageLightbox";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { ReplyForm } from "./ReplyForm";
+import { ReplyCard } from "./ReplyCard";
+import { MoreVertical, Trash2, MessageCircle } from "lucide-react";
 
 type PostCardProps = {
   post: PostWithProfile;
   currentUserId?: string;
   hideReactions?: boolean;
+  replies?: PostWithProfile[];
 };
 
-export function PostCard({ post, currentUserId, hideReactions = false }: PostCardProps) {
+export function PostCard({ post, currentUserId, hideReactions = false, replies = [] }: PostCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [replyFormOpen, setReplyFormOpen] = useState(false);
   const displayName = post.profile.display_name || post.profile.username;
   const isOwnPost = currentUserId === post.user_id;
 
@@ -63,7 +67,9 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
               </Link>
               <span className="text-sm text-neutral-500">@{post.profile.username}</span>
               <span className="text-sm text-neutral-400">·</span>
-              <span className="text-sm text-neutral-500">{formatRelativeTime(post.created_at)}</span>
+              <span className="text-sm text-neutral-500" suppressHydrationWarning>
+                {formatRelativeTime(post.created_at)}
+              </span>
             </div>
 
             {/* タグ */}
@@ -122,6 +128,41 @@ export function PostCard({ post, currentUserId, hideReactions = false }: PostCar
           {/* リアクション */}
           {!hideReactions && (
             <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} isOwnPost={isOwnPost} />
+          )}
+
+          {/* 返信ボタン */}
+          {!hideReactions && currentUserId && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyFormOpen(!replyFormOpen)}
+                className="h-8 gap-1 text-neutral-600 hover:text-blue-600"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-sm">返信</span>
+              </Button>
+            </div>
+          )}
+
+          {/* 返信フォーム */}
+          {replyFormOpen && currentUserId && (
+            <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+              <ReplyForm
+                parentPostId={post.id}
+                onSuccess={() => setReplyFormOpen(false)}
+                onCancel={() => setReplyFormOpen(false)}
+              />
+            </div>
+          )}
+
+          {/* リプライ一覧 */}
+          {replies.length > 0 && (
+            <div className="mt-4 space-y-3 border-l-2 border-neutral-200 pl-4">
+              {replies.map((reply) => (
+                <ReplyCard key={reply.id} reply={reply} currentUserId={currentUserId} />
+              ))}
+            </div>
           )}
         </div>
       </CardContent>

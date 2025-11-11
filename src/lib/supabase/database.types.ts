@@ -72,6 +72,7 @@ export type Database = {
           created_at: string | null
           id: string
           image_urls: Json | null
+          parent_post_id: string | null
           tags: string[]
           updated_at: string | null
           user_id: string
@@ -81,6 +82,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_urls?: Json | null
+          parent_post_id?: string | null
           tags?: string[]
           updated_at?: string | null
           user_id: string
@@ -90,11 +92,19 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_urls?: Json | null
+          parent_post_id?: string | null
           tags?: string[]
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_parent_post_id_fkey"
+            columns: ["parent_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]

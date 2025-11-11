@@ -25,6 +25,7 @@ export type PostWithProfile = {
 
 /**
  * Get all posts ordered by creation date (newest first)
+ * Excludes replies (only returns top-level posts)
  * @returns Array of posts with profile information
  */
 export async function getPosts(): Promise<PostWithProfile[]> {
@@ -44,6 +45,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
       reactions(id, post_id, user_id, emoji, created_at)
     `,
     )
+    .is("parent_post_id", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -68,6 +70,7 @@ export async function getPosts(): Promise<PostWithProfile[]> {
 
 /**
  * Get posts by user, ordered by creation date (newest first)
+ * Excludes replies (only returns top-level posts)
  * @param userId - User ID to filter by
  * @returns Array of posts by the specified user
  */
@@ -89,6 +92,7 @@ export async function getPostsByUser(userId: string): Promise<PostWithProfile[]>
     `,
     )
     .eq("user_id", userId)
+    .is("parent_post_id", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -113,6 +117,7 @@ export async function getPostsByUser(userId: string): Promise<PostWithProfile[]>
 
 /**
  * Get posts filtered by tag, ordered by creation date (newest first)
+ * Excludes replies (only returns top-level posts)
  * @param tag - Tag to filter by
  * @returns Array of posts with the specified tag
  */
@@ -134,6 +139,7 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
     `,
     )
     .contains("tags", [tag])
+    .is("parent_post_id", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -148,6 +154,53 @@ export async function getPostsByTag(tag: string): Promise<PostWithProfile[]> {
       content: post.content,
       tags: post.tags,
       image_urls: post.image_urls as string[] | null,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
+      reactions: post.reactions || [],
+    })) || []
+  );
+}
+
+/**
+ * Get replies for a specific post
+ * @param postId - Parent post ID
+ * @returns Array of replies with profile information
+ */
+export async function getReplies(postId: string): Promise<PostWithProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      image_urls,
+      parent_post_id,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
+    `,
+    )
+    .eq("parent_post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching replies:", error);
+    return [];
+  }
+
+  // Transform the data to match our type
+  return (
+    data?.map((post) => ({
+      id: post.id,
+      content: post.content,
+      tags: post.tags,
+      image_urls: post.image_urls as string[] | null,
+      parent_post_id: post.parent_post_id,
       created_at: post.created_at,
       user_id: post.user_id,
       profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
@@ -257,6 +310,67 @@ export async function createPost(formData: { content: string; tags: string[]; im
   } catch (error) {
     console.error("Error in createPost:", error);
     return { success: false, error: "投稿の作成に失敗しました" };
+  }
+}
+
+/**
+ * Create a reply to a post
+ * @param formData - Reply content and parent post ID
+ * @returns Success status and error message if any
+ */
+export async function createReply(formData: { content: string; parentPostId: string }) {
+  try {
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    // Validate content
+    if (!formData.content || formData.content.trim().length === 0) {
+      return { success: false, error: "返信内容を入力してください" };
+    }
+
+    if (formData.content.length > 280) {
+      return { success: false, error: "返信は280文字以内で入力してください" };
+    }
+
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // Get parent post to inherit tags
+    const { data: parentPost, error: parentError } = await supabase
+      .from("posts")
+      .select("tags")
+      .eq("id", formData.parentPostId)
+      .single();
+
+    if (parentError || !parentPost) {
+      console.error("Error fetching parent post:", parentError);
+      return { success: false, error: "返信先の投稿が見つかりませんでした" };
+    }
+
+    // Insert reply with parent_post_id
+    const { error } = await supabase.from("posts").insert({
+      content: formData.content.trim(),
+      tags: parentPost.tags, // Inherit tags from parent post
+      parent_post_id: formData.parentPostId,
+      user_id: user.id,
+    });
+
+    if (error) {
+      console.error("Error creating reply:", error);
+      return { success: false, error: "返信の作成に失敗しました" };
+    }
+
+    // Revalidate relevant paths
+    revalidatePath("/home");
+    revalidatePath(`/posts/${formData.parentPostId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in createReply:", error);
+    return { success: false, error: "返信の作成に失敗しました" };
   }
 }
 
