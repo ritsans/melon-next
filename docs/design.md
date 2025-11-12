@@ -1253,29 +1253,7 @@ interface FollowButtonProps {
 // - 相互フォロー: 「相互フォロー」テキスト + チェックアイコン
 ```
 
-#### 2. FollowStats コンポーネント
-
-```typescript
-// components/follows/FollowStats.tsx
-
-interface FollowStatsProps {
-  userId: string;
-  stats: FollowStats;
-  isOwnProfile: boolean;
-}
-
-// 機能:
-// - フォロワー数とフォロー中の数を表示
-// - クリックでそれぞれの一覧ページに遷移
-// - 数値のフォーマット（例: 1,234）
-// - レスポンシブ対応
-
-// 表示例:
-// フォロワー    フォロー中
-//    120         45
-```
-
-#### 3. FollowList コンポーネント
+#### 2. FollowList コンポーネント
 
 ```typescript
 // components/follows/FollowList.tsx
@@ -1295,7 +1273,7 @@ interface FollowListProps {
 // - ページネーション（将来実装）
 ```
 
-#### 4. FeedTabs コンポーネント
+#### 3. FeedTabs コンポーネント
 
 ```typescript
 // components/posts/FeedTabs.tsx
