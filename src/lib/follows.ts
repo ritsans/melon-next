@@ -250,3 +250,99 @@ export async function getFollowStats(userId: string): Promise<FollowStats> {
     };
   }
 }
+
+/**
+ * ユーザーのフォロワー一覧を取得
+ * @param userId - フォロワーを取得するユーザーID
+ * @returns プロフィール情報を含むフォロワー一覧
+ */
+export async function getFollowers(userId: string): Promise<FollowWithProfile[]> {
+  try {
+    // Supabaseクライアントを作成
+    const supabase = await createClient();
+
+    // フォロワー一覧を取得（このユーザーをフォローしている人）
+    const { data, error } = await supabase
+      .from("follows")
+      .select(
+        `
+        id,
+        follower_id,
+        following_id,
+        created_at,
+        profile:profiles!follows_follower_id_fkey(username, display_name, avatar_url, bio)
+      `,
+      )
+      .eq("following_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching followers:", error);
+      return [];
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // 型を整形して返す
+    return data.map((follow) => ({
+      id: follow.id,
+      follower_id: follow.follower_id,
+      following_id: follow.following_id,
+      created_at: follow.created_at,
+      profile: Array.isArray(follow.profile) ? follow.profile[0] : follow.profile,
+    })) as FollowWithProfile[];
+  } catch (error) {
+    console.error("Error in getFollowers:", error);
+    return [];
+  }
+}
+
+/**
+ * ユーザーがフォロー中のユーザー一覧を取得
+ * @param userId - フォロー中を取得するユーザーID
+ * @returns プロフィール情報を含むフォロー中一覧
+ */
+export async function getFollowing(userId: string): Promise<FollowWithProfile[]> {
+  try {
+    // Supabaseクライアントを作成
+    const supabase = await createClient();
+
+    // フォロー中一覧を取得（このユーザーがフォローしている人）
+    const { data, error } = await supabase
+      .from("follows")
+      .select(
+        `
+        id,
+        follower_id,
+        following_id,
+        created_at,
+        profile:profiles!follows_following_id_fkey(username, display_name, avatar_url, bio)
+      `,
+      )
+      .eq("follower_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching following:", error);
+      return [];
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // 型を整形して返す
+    return data.map((follow) => ({
+      id: follow.id,
+      follower_id: follow.follower_id,
+      following_id: follow.following_id,
+      created_at: follow.created_at,
+      profile: Array.isArray(follow.profile) ? follow.profile[0] : follow.profile,
+    })) as FollowWithProfile[];
+  } catch (error) {
+    console.error("Error in getFollowing:", error);
+    return [];
+  }
+}

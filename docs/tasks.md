@@ -253,7 +253,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
 
 ### Phase 4.1: 基本フォロー機能（最優先）
 
-- [ ] 30. データベーススキーマ作成（フォロー関係）
+- [x] 30. データベーススキーマ作成（フォロー関係）
   - followsテーブルを作成するマイグレーションを作成する
   - follower_id（フォローする人）、following_id（フォローされる人）カラムを定義する
   - UNIQUE制約で重複フォロー防止を実装する（`UNIQUE(follower_id, following_id)`）
@@ -264,7 +264,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - _要件: 9（フォロー・フォロワー機能）_
   - _設計書: design.md - フォロー・フォロワー機能の設計 > データモデル_
 
-- [ ] 31. フォロー/フォロー解除のServer Actions
+- [x] 31. フォロー/フォロー解除のServer Actions
   - `lib/follows.ts`を作成する
   - `followUser()` Server Actionを実装する（フォロー処理）
   - `unfollowUser()` Server Actionを実装する（フォロー解除処理）
