@@ -910,3 +910,651 @@ import Image from 'next/image';
 - Supabaseのキャッシュ機能
 - ブラウザキャッシュ
 - CDN活用（Vercel本番のみ）
+
+## フォロー・フォロワー機能の設計
+
+### 概要
+
+ユーザー間のフォロー関係を管理し、パーソナライズされたコンテンツフィードを提供するソーシャル機能です。TwitterやInstagramのような双方向フォロー関係を実装します。
+
+### データモデル
+
+#### followsテーブル
+
+```sql
+-- フォロー関係テーブル
+CREATE TABLE follows (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  follower_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,  -- フォローする人
+  following_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL, -- フォローされる人
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(follower_id, following_id),                                     -- 重複フォロー防止
+  CHECK (follower_id != following_id)                                    -- 自分自身をフォロー禁止
+);
+
+-- インデックス: フォロワー一覧取得の最適化
+CREATE INDEX idx_follows_following_id ON follows(following_id);
+
+-- インデックス: フォロー中一覧取得の最適化
+CREATE INDEX idx_follows_follower_id ON follows(follower_id);
+
+-- インデックス: フォロー状態チェックの最適化
+CREATE INDEX idx_follows_relationship ON follows(follower_id, following_id);
+```
+
+#### TypeScript型定義
+
+```typescript
+// types/follow.ts
+export interface Follow {
+  id: string;
+  follower_id: string;   // フォローする人
+  following_id: string;  // フォローされる人
+  created_at: string;
+}
+
+// フォロー統計情報
+export interface FollowStats {
+  followers_count: number;  // フォロワー数
+  following_count: number;  // フォロー中の数
+}
+
+// フォロー状態
+export interface FollowStatus {
+  is_following: boolean;      // 自分が相手をフォローしているか
+  is_followed_by: boolean;    // 相手が自分をフォローしているか
+  is_mutual: boolean;         // 相互フォローか
+}
+
+// フォロー一覧表示用（プロフィール情報付き）
+export interface FollowWithProfile {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+  profile: Profile;           // フォロワーまたはフォロー中のユーザー情報
+  follow_status?: FollowStatus; // 現在のユーザーとの関係
+}
+```
+
+### API設計（Supabase + Server Actions）
+
+#### 1. フォロー関係の基本操作
+
+```typescript
+// lib/follows.ts
+"use server";
+
+// フォローする
+export async function followUser(followingId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: '認証が必要です' };
+  if (user.id === followingId) return { error: '自分自身をフォローできません' };
+
+  const { error } = await supabase
+    .from('follows')
+    .insert({
+      follower_id: user.id,
+      following_id: followingId
+    });
+
+  if (error) return { error: 'フォローに失敗しました' };
+
+  // 通知作成
+  await createNotification({
+    user_id: followingId,
+    actor_id: user.id,
+    type: 'follow'
+  });
+
+  return {};
+}
+
+// フォロー解除
+export async function unfollowUser(followingId: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: '認証が必要です' };
+
+  const { error } = await supabase
+    .from('follows')
+    .delete()
+    .match({
+      follower_id: user.id,
+      following_id: followingId
+    });
+
+  if (error) return { error: 'フォロー解除に失敗しました' };
+
+  return {};
+}
+
+// フォロー状態を取得
+export async function getFollowStatus(
+  targetUserId: string
+): Promise<FollowStatus | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+  if (user.id === targetUserId) return null; // 自分自身は除外
+
+  // 自分が相手をフォローしているか
+  const { data: following } = await supabase
+    .from('follows')
+    .select('id')
+    .match({
+      follower_id: user.id,
+      following_id: targetUserId
+    })
+    .single();
+
+  // 相手が自分をフォローしているか
+  const { data: followedBy } = await supabase
+    .from('follows')
+    .select('id')
+    .match({
+      follower_id: targetUserId,
+      following_id: user.id
+    })
+    .single();
+
+  const isFollowing = !!following;
+  const isFollowedBy = !!followedBy;
+
+  return {
+    is_following: isFollowing,
+    is_followed_by: isFollowedBy,
+    is_mutual: isFollowing && isFollowedBy
+  };
+}
+```
+
+#### 2. フォロー統計情報の取得
+
+```typescript
+// フォロー統計を取得
+export async function getFollowStats(userId: string): Promise<FollowStats> {
+  const supabase = await createClient();
+
+  // フォロワー数
+  const { count: followersCount } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', userId);
+
+  // フォロー中の数
+  const { count: followingCount } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', userId);
+
+  return {
+    followers_count: followersCount || 0,
+    following_count: followingCount || 0
+  };
+}
+```
+
+#### 3. フォロー一覧の取得
+
+```typescript
+// フォロワー一覧を取得
+export async function getFollowers(
+  userId: string,
+  currentUserId?: string
+): Promise<FollowWithProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('follows')
+    .select(`
+      id,
+      follower_id,
+      following_id,
+      created_at,
+      follower:profiles!follower_id(
+        id,
+        username,
+        display_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .eq('following_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  // 現在のユーザーとの関係を付与
+  const followersWithStatus = await Promise.all(
+    data.map(async (follow) => ({
+      ...follow,
+      profile: follow.follower,
+      follow_status: currentUserId
+        ? await getFollowStatus(follow.follower_id)
+        : undefined
+    }))
+  );
+
+  return followersWithStatus;
+}
+
+// フォロー中の一覧を取得
+export async function getFollowing(
+  userId: string,
+  currentUserId?: string
+): Promise<FollowWithProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('follows')
+    .select(`
+      id,
+      follower_id,
+      following_id,
+      created_at,
+      following:profiles!following_id(
+        id,
+        username,
+        display_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .eq('follower_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  // 現在のユーザーとの関係を付与
+  const followingWithStatus = await Promise.all(
+    data.map(async (follow) => ({
+      ...follow,
+      profile: follow.following,
+      follow_status: currentUserId
+        ? await getFollowStatus(follow.following_id)
+        : undefined
+    }))
+  );
+
+  return followingWithStatus;
+}
+```
+
+#### 4. フォロー中ユーザーの投稿取得
+
+```typescript
+// lib/posts.ts に追加
+
+// フォロー中のユーザーの投稿を取得
+export async function getFollowingPosts(): Promise<Post[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  // フォロー中のユーザーIDを取得
+  const { data: followingData } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id);
+
+  if (!followingData || followingData.length === 0) return [];
+
+  const followingIds = followingData.map(f => f.following_id);
+
+  // フォロー中のユーザーの投稿を取得
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      profiles(username, display_name, avatar_url),
+      reactions(emoji, user_id)
+    `)
+    .in('user_id', followingIds)
+    .is('parent_post_id', null) // トップレベル投稿のみ
+    .order('created_at', { ascending: false });
+
+  if (error || !posts) return [];
+
+  return posts;
+}
+```
+
+### UI/UXコンポーネント設計
+
+#### 1. FollowButton コンポーネント
+
+```typescript
+// components/follows/FollowButton.tsx
+"use client";
+
+interface FollowButtonProps {
+  userId: string;
+  username: string;
+  initialFollowStatus: FollowStatus | null;
+  size?: "default" | "sm" | "lg";
+}
+
+// 機能:
+// - フォロー/フォロー解除のトグルボタン
+// - 楽観的UI更新（即座に反映）
+// - ローディング状態表示
+// - 相互フォロー表示（アイコンまたはテキスト）
+// - 自分自身の場合はボタン非表示
+
+// ボタンスタイル:
+// - フォロー前: Primary色の「フォロー」ボタン
+// - フォロー中: Ghost/Outline の「フォロー中」ボタン
+// - 相互フォロー: 「相互フォロー」テキスト + チェックアイコン
+```
+
+#### 2. FollowStats コンポーネント
+
+```typescript
+// components/follows/FollowStats.tsx
+
+interface FollowStatsProps {
+  userId: string;
+  stats: FollowStats;
+  isOwnProfile: boolean;
+}
+
+// 機能:
+// - フォロワー数とフォロー中の数を表示
+// - クリックでそれぞれの一覧ページに遷移
+// - 数値のフォーマット（例: 1,234）
+// - レスポンシブ対応
+
+// 表示例:
+// フォロワー    フォロー中
+//    120         45
+```
+
+#### 3. FollowList コンポーネント
+
+```typescript
+// components/follows/FollowList.tsx
+
+interface FollowListProps {
+  users: FollowWithProfile[];
+  type: 'followers' | 'following';
+  currentUserId?: string;
+}
+
+// 機能:
+// - フォロワー/フォロー中のユーザー一覧表示
+// - 各ユーザーのアバター、表示名、ユーザー名、bio表示
+// - 各ユーザーへのFollowButtonを表示
+// - プロフィールへのリンク
+// - 空状態の表示（「まだフォロワーがいません」等）
+// - ページネーション（将来実装）
+```
+
+#### 4. FeedTabs コンポーネント
+
+```typescript
+// components/posts/FeedTabs.tsx
+
+interface FeedTabsProps {
+  activeTab: 'all' | 'following';
+  onTabChange: (tab: 'all' | 'following') => void;
+}
+
+// 機能:
+// - 「すべて」と「フォロー中」のタブ切り替え
+// - 選択中のタブをハイライト表示
+// - タブ切り替え時のスムーズな遷移
+
+// レイアウト:
+// ┌──────────┬──────────┐
+// │ すべて   │ フォロー中│
+// └──────────┴──────────┘
+```
+
+### ページ構成
+
+#### 1. プロフィールページの拡張
+
+```typescript
+// app/(main)/profile/[username]/page.tsx
+
+// 追加要素:
+// - FollowButton（他のユーザーのプロフィール表示時）
+// - FollowStats（フォロワー数、フォロー中の数）
+// - フォロー状態表示（相互フォロー等）
+```
+
+#### 2. フォロワー一覧ページ
+
+```typescript
+// app/(main)/profile/[username]/followers/page.tsx
+
+// 機能:
+// - そのユーザーのフォロワー一覧を表示
+// - FollowListコンポーネントを使用
+// - 自分のフォロワー一覧か他人のフォロワー一覧かで表示を調整
+```
+
+#### 3. フォロー中一覧ページ
+
+```typescript
+// app/(main)/profile/[username]/following/page.tsx
+
+// 機能:
+// - そのユーザーがフォロー中のユーザー一覧を表示
+// - FollowListコンポーネントを使用
+// - 自分のフォロー中一覧か他人のフォロー中一覧かで表示を調整
+```
+
+#### 4. ホームフィードの拡張
+
+```typescript
+// app/(main)/home/page.tsx
+
+// 追加要素:
+// - FeedTabsコンポーネント
+// - タブ切り替えによる投稿フィルタリング
+// - フォロー中タブでフォロー中のユーザーの投稿のみ表示
+// - フォロー中のユーザーがいない場合のメッセージ
+```
+
+### 通知システムとの統合
+
+#### notificationsテーブルの拡張
+
+```sql
+-- 既存のnotificationsテーブルにフォロー通知を追加
+-- typeに 'follow' を追加（既存: 'reaction', 'reply'）
+
+-- フォロー通知の例:
+INSERT INTO notifications (
+  user_id,      -- フォローされた人
+  actor_id,     -- フォローした人
+  type,         -- 'follow'
+  is_read,      -- false
+  created_at
+) VALUES (...);
+```
+
+#### 通知メッセージ生成の拡張
+
+```typescript
+// lib/notifications.ts に追加
+
+const generateNotificationMessage = (notification: Notification): string => {
+  const actorName = notification.actor?.display_name || notification.actor?.username || '誰か';
+
+  switch (notification.type) {
+    case 'reaction':
+      return `${actorName}さんがあなたの投稿に${notification.emoji}しました`;
+    case 'reply':
+      return `${actorName}さんがあなたの投稿に返信しました`;
+    case 'follow':
+      return `${actorName}さんがあなたをフォローしました`;
+    default:
+      return `${actorName}さんからの通知`;
+  }
+};
+```
+
+### セキュリティ・バリデーション
+
+#### RLSポリシー
+
+```sql
+-- フォロー関係の閲覧: すべてのユーザー
+CREATE POLICY "Anyone can view follows"
+ON follows FOR SELECT
+TO public
+USING (true);
+
+-- フォロー関係の作成: 認証済みユーザー（自分がfollower）
+CREATE POLICY "Users can follow others"
+ON follows FOR INSERT
+TO authenticated
+WITH CHECK (
+  auth.uid() = follower_id AND
+  follower_id != following_id
+);
+
+-- フォロー関係の削除: 認証済みユーザー（自分がfollower）
+CREATE POLICY "Users can unfollow others"
+ON follows FOR DELETE
+TO authenticated
+USING (auth.uid() = follower_id);
+```
+
+#### バリデーション
+
+```typescript
+// lib/validations.ts に追加
+
+export const followSchema = z.object({
+  following_id: z.string().uuid('無効なユーザーIDです')
+});
+
+// フォロー処理のバリデーション:
+// 1. ユーザー認証チェック
+// 2. 自分自身をフォローしないチェック
+// 3. 既にフォロー済みでないかチェック
+// 4. フォロー対象ユーザーが存在するかチェック
+```
+
+### パフォーマンス最適化
+
+#### 1. インデックス戦略
+
+```sql
+-- フォロワー一覧取得の最適化
+CREATE INDEX idx_follows_following_id ON follows(following_id);
+
+-- フォロー中一覧取得の最適化
+CREATE INDEX idx_follows_follower_id ON follows(follower_id);
+
+-- フォロー状態チェックの最適化（複合インデックス）
+CREATE INDEX idx_follows_relationship ON follows(follower_id, following_id);
+
+-- 作成日時ソートの最適化
+CREATE INDEX idx_follows_created_at ON follows(created_at DESC);
+```
+
+#### 2. クエリ最適化
+
+```typescript
+// バッチ処理でフォロー状態を取得（N+1問題の回避）
+export async function getBatchFollowStatus(
+  targetUserIds: string[]
+): Promise<Map<string, FollowStatus>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return new Map();
+
+  // 一括でフォロー関係を取得
+  const { data } = await supabase
+    .from('follows')
+    .select('follower_id, following_id')
+    .or(`follower_id.eq.${user.id},following_id.eq.${user.id}`)
+    .in('following_id', targetUserIds)
+    .in('follower_id', [user.id, ...targetUserIds]);
+
+  // マップに変換
+  const statusMap = new Map<string, FollowStatus>();
+  // ... ロジック実装
+
+  return statusMap;
+}
+```
+
+#### 3. キャッシュ戦略
+
+- フォロー統計はプロフィールページで5分間キャッシュ
+- フォロー状態は楽観的UI更新でユーザー体験を向上
+- フォロー一覧はページネーションで分割読み込み
+
+### エラーハンドリング
+
+```typescript
+// エラーケース:
+// 1. 未認証ユーザーのフォロー試行
+// 2. 自分自身をフォロー試行
+// 3. 既にフォロー済みのユーザーを再フォロー
+// 4. 存在しないユーザーをフォロー
+// 5. データベース接続エラー
+// 6. RLSポリシー違反
+
+// エラーメッセージ:
+const ERROR_MESSAGES = {
+  UNAUTHENTICATED: 'ログインが必要です',
+  SELF_FOLLOW: '自分自身をフォローできません',
+  ALREADY_FOLLOWING: '既にフォローしています',
+  USER_NOT_FOUND: 'ユーザーが見つかりません',
+  DATABASE_ERROR: 'フォローに失敗しました。もう一度お試しください',
+  PERMISSION_DENIED: '権限がありません'
+};
+```
+
+### テスト戦略
+
+#### 1. 単体テスト
+- フォロー/フォロー解除関数
+- フォロー状態取得関数
+- フォロー統計計算関数
+
+#### 2. 統合テスト
+- フォロー → 通知作成の流れ
+- フォロー → フィード反映の流れ
+- フォロー解除 → データ整合性
+
+#### 3. E2Eテスト
+- ユーザーAがユーザーBをフォロー
+- フォロワー一覧・フォロー中一覧の表示
+- フォロー中のユーザーの投稿フィルタリング
+
+### 実装の段階的ロードマップ
+
+#### Phase 1: 基本フォロー機能（最優先）
+- followsテーブル作成
+- フォロー/フォロー解除のServer Actions
+- FollowButtonコンポーネント
+- プロフィールページへの統合
+
+#### Phase 2: フォロー一覧表示
+- フォロー統計表示
+- フォロワー一覧ページ
+- フォロー中一覧ページ
+
+#### Phase 3: フィード統合
+- フォロー中の投稿フィルタリング
+- FeedTabsコンポーネント
+- ホームフィードの拡張
+
+#### Phase 4: 通知・拡張機能
+- フォロー通知
+- 相互フォロー表示
+- おすすめユーザー機能（将来）
