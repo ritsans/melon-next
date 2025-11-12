@@ -28,7 +28,6 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [replyFormOpen, setReplyFormOpen] = useState(false);
   const [nestedReplies, setNestedReplies] = useState<PostWithProfile[]>([]);
-  const [loadingReplies, setLoadingReplies] = useState(false);
   const displayName = reply.profile.display_name || reply.profile.username;
   const isOwnReply = currentUserId === reply.user_id;
   const isMaxDepth = depth >= 1; // 第2階層が最大
@@ -36,10 +35,8 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
   // 第1階層の場合のみ、ネストされた返信を取得
   useEffect(() => {
     if (depth === 0) {
-      setLoadingReplies(true);
       getReplies(reply.id)
-        .then((replies) => setNestedReplies(replies))
-        .finally(() => setLoadingReplies(false));
+        .then((replies) => setNestedReplies(replies));
     }
   }, [reply.id, depth]);
 
@@ -47,10 +44,8 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
   const handleReplySuccess = () => {
     setReplyFormOpen(false);
     if (depth === 0) {
-      setLoadingReplies(true);
       getReplies(reply.id)
-        .then((replies) => setNestedReplies(replies))
-        .finally(() => setLoadingReplies(false));
+        .then((replies) => setNestedReplies(replies));
     }
   };
 
@@ -58,10 +53,8 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
   const handleReplyDeleted = () => {
     if (depth === 0) {
       // 第1階層：ネストされた返信を再取得
-      setLoadingReplies(true);
       getReplies(reply.id)
-        .then((replies) => setNestedReplies(replies))
-        .finally(() => setLoadingReplies(false));
+        .then((replies) => setNestedReplies(replies));
     } else {
       // 第2階層：親のコールバックを呼び出す
       onDeleted?.();

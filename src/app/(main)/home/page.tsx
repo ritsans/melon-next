@@ -1,10 +1,13 @@
-import { getPosts, getReplies } from "@/lib/posts";
+import Link from "next/link";
+import { getFollowingPosts, getReplies } from "@/lib/posts";
 import { PostCard } from "@/components/posts/PostCard";
 import { CreatePostButton } from "@/components/posts/CreatePostButton";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
+import { Users } from "lucide-react";
 
 export default async function HomePage() {
-  const posts = await getPosts();
+  const posts = await getFollowingPosts();
   const user = await getCurrentUser();
 
   // 各投稿のリプライを取得
@@ -24,9 +27,17 @@ export default async function HomePage() {
 
       <div className="space-y-4">
         {postsWithReplies.length === 0 ? (
-          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center">
-            <p className="text-neutral-600">まだ投稿がありません</p>
-            <p className="mt-2 text-sm text-neutral-500">最初の投稿をしてみましょう！</p>
+          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center space-y-4">
+            <Users className="h-12 w-12 text-neutral-400 mx-auto" />
+            <div>
+              <p className="text-neutral-700 font-medium">まだフォロー中のユーザーがいません</p>
+              <p className="mt-2 text-sm text-neutral-500">
+                みんなの投稿を見て、興味のあるユーザーをフォローしましょう！
+              </p>
+            </div>
+            <Link href="/everyone">
+              <Button>みんなの投稿を見る</Button>
+            </Link>
           </div>
         ) : (
           postsWithReplies.map(({ post, replies }) => (

@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
+import Link from "next/link";
 import { getProfileByUsername, getCurrentUser } from "@/lib/auth";
 import { getPostsByUser, getReplies } from "@/lib/posts";
 import { getFollowStatus, getFollowStats } from "@/lib/follows";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/posts/PostCard";
 import { FollowButton } from "@/components/follows/FollowButton";
@@ -91,31 +93,31 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 />
               </div>
 
+              {/* フォロー・フォロワー統計 */}
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-neutral-700">
+                  <span className="font-semibold text-neutral-900">{followStats.following_count}</span> フォロー
+                </span>
+                <span className="text-neutral-700">
+                  <span className="font-semibold text-neutral-900">{followStats.followers_count}</span> フォロワー
+                </span>
+                {(followStats.followers_count > 0 || followStats.following_count > 0) && (
+                  <Link href={`/profile/${profile.username}/connections`}>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      つながり
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
               {/* 関係性バッジ */}
               {currentUser && currentUser.id !== profile.id && (
-                <div className="flex flex-wrap gap-2 text-sm">
-                  {followStatus.is_following && followStatus.is_followed_by && (
-                    <Badge variant="default" className="bg-blue-500">
-                      相互フォロー
-                    </Badge>
-                  )}
+                <div className="flex flex-wrap gap-2">
                   {!followStatus.is_following && followStatus.is_followed_by && (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-xs">
                       フォローされています
                     </Badge>
                   )}
-                </div>
-              )}
-
-              {/* つながりを見るリンク */}
-              {(followStats.followers_count > 0 || followStats.following_count > 0) && (
-                <div className="text-sm">
-                  <a
-                    href={`/profile/${profile.username}/connections`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    つながりを見る
-                  </a>
                 </div>
               )}
 

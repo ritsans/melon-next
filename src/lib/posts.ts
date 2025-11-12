@@ -117,6 +117,77 @@ export async function getPostsByUser(userId: string): Promise<PostWithProfile[]>
 }
 
 /**
+ * Get posts from users that the current user is following
+ * Excludes replies (only returns top-level posts)
+ * @returns Array of posts from followed users, ordered by creation date (newest first)
+ */
+export async function getFollowingPosts(): Promise<PostWithProfile[]> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  // Get the list of users that the current user is following
+  const { data: followingData, error: followingError } = await supabase
+    .from("follows")
+    .select("following_id")
+    .eq("follower_id", user.id);
+
+  if (followingError) {
+    console.error("Error fetching following list:", followingError);
+    return [];
+  }
+
+  // If not following anyone, return empty array
+  if (!followingData || followingData.length === 0) {
+    return [];
+  }
+
+  // Extract the user IDs
+  const followingIds = followingData.map((f) => f.following_id);
+
+  // Get posts from followed users
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      image_urls,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url),
+      reactions(id, post_id, user_id, emoji, created_at)
+    `,
+    )
+    .in("user_id", followingIds)
+    .is("parent_post_id", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching following posts:", error);
+    return [];
+  }
+
+  // Transform the data to match our type
+  return (
+    data?.map((post) => ({
+      id: post.id,
+      content: post.content,
+      tags: post.tags,
+      image_urls: post.image_urls as string[] | null,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      profile: Array.isArray(post.profile) ? post.profile[0] : post.profile,
+      reactions: post.reactions || [],
+    })) || []
+  );
+}
+
+/**
  * Get posts filtered by tag, ordered by creation date (newest first)
  * Excludes replies (only returns top-level posts)
  * @param tag - Tag to filter by
