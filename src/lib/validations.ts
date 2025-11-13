@@ -87,3 +87,29 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * プロフィール編集フォームのバリデーションスキーマ
+ */
+export const profileEditSchema = z.object({
+  display_name: z
+    .string()
+    .min(1, "表示名は必須です")
+    .max(50, "表示名は50文字以内で入力してください"),
+  bio: z
+    .string()
+    .max(200, "自己紹介は200文字以内で入力してください")
+    .optional()
+    .or(z.literal("")),
+  interests: z.array(z.string()).optional(),
+  avatar: z
+    .instanceof(File)
+    .refine((file) => file.size <= 2 * 1024 * 1024, "画像サイズは2MB以下にしてください")
+    .refine(
+      (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+      "JPEG、PNG、WebP形式の画像のみアップロード可能です",
+    )
+    .optional(),
+});
+
+export type ProfileEditFormData = z.infer<typeof profileEditSchema>;
