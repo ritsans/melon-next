@@ -3,6 +3,41 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+type NotificationType = "reaction" | "reply" | "follow";
+
+type NotificationInsertInput = {
+  userId: string;
+  actorId: string;
+  type: NotificationType;
+  postId?: string | null;
+  reactionEmoji?: string | null;
+};
+
+async function insertNotification({ userId, actorId, type, postId, reactionEmoji }: NotificationInsertInput) {
+  const supabase = await createClient();
+
+  // 自分自身に対するアクションには通知を作成しない
+  if (userId === actorId) {
+    return { success: true };
+  }
+
+  const { error } = await supabase.from("notifications").insert({
+    user_id: userId,
+    actor_id: actorId,
+    post_id: postId ?? null,
+    type,
+    reaction_emoji: reactionEmoji ?? null,
+    is_read: false,
+  });
+
+  if (error) {
+    console.error("Error creating notification:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
 /**
  * 通知を作成する（リアクション用）
  * @param userId - 通知を受け取るユーザーID（投稿者）
@@ -16,28 +51,13 @@ export async function createNotification(
   postId: string,
   reactionEmoji: string,
 ) {
-  const supabase = await createClient();
-
-  // 自分の投稿へのリアクションには通知を作成しない
-  if (userId === actorId) {
-    return { success: true };
-  }
-
-  const { error } = await supabase.from("notifications").insert({
-    user_id: userId,
-    actor_id: actorId,
-    post_id: postId,
+  return insertNotification({
+    userId,
+    actorId,
     type: "reaction",
-    reaction_emoji: reactionEmoji,
-    is_read: false,
+    postId,
+    reactionEmoji,
   });
-
-  if (error) {
-    console.error("Error creating notification:", error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
 }
 
 /**
@@ -47,28 +67,25 @@ export async function createNotification(
  * @param postId - 返信先の投稿ID
  */
 export async function createReplyNotification(userId: string, actorId: string, postId: string) {
-  const supabase = await createClient();
-
-  // 自分の投稿への返信には通知を作成しない
-  if (userId === actorId) {
-    return { success: true };
-  }
-
-  const { error } = await supabase.from("notifications").insert({
-    user_id: userId,
-    actor_id: actorId,
-    post_id: postId,
+  return insertNotification({
+    userId,
+    actorId,
     type: "reply",
-    reaction_emoji: null,
-    is_read: false,
+    postId,
   });
+}
 
-  if (error) {
-    console.error("Error creating reply notification:", error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
+/**
+ * フォロー通知を作成する
+ * @param userId - 通知を受け取るユーザーID（フォローされた人）
+ * @param actorId - フォローしたユーザーID
+ */
+export async function createFollowNotification(userId: string, actorId: string) {
+  return insertNotification({
+    userId,
+    actorId,
+    type: "follow",
+  });
 }
 
 /**

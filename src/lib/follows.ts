@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { formatError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
+import { createFollowNotification } from "@/lib/notifications";
 
 /**
  * フォロー関係の基本型
@@ -101,6 +102,12 @@ export async function followUser(targetUserId: string) {
     if (insertError) {
       console.error("Error creating follow:", insertError);
       return { success: false, error: formatError(insertError) };
+    }
+
+    // フォロー通知を作成（失敗しても致命的ではないためログのみ出力）
+    const notificationResult = await createFollowNotification(targetUserId, user.id);
+    if (!notificationResult.success) {
+      console.error("Failed to create follow notification:", notificationResult.error);
     }
 
     // キャッシュを再検証

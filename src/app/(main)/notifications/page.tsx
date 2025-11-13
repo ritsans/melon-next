@@ -37,7 +37,7 @@ export default async function NotificationsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>通知</CardTitle>
-              <CardDescription>あなたへのリアクション通知を確認できます</CardDescription>
+              <CardDescription>あなたへのリアクションやフォロー通知を確認できます</CardDescription>
             </div>
             {hasUnread && <MarkAllAsReadButton userId={user.id} />}
           </div>

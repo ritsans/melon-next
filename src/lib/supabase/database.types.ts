@@ -18,37 +18,47 @@ export type Database = {
         Row: {
           actor_id: string
           created_at: string | null
+          followed_user_id: string | null
           id: string
           is_read: boolean | null
-          post_id: string
+          post_id: string | null
           reaction_emoji: string | null
-          type: string
+          type: "reaction" | "reply" | "follow"
           user_id: string
         }
         Insert: {
           actor_id: string
           created_at?: string | null
+          followed_user_id?: string | null
           id?: string
           is_read?: boolean | null
-          post_id: string
+          post_id?: string | null
           reaction_emoji?: string | null
-          type?: string
+          type?: "reaction" | "reply" | "follow"
           user_id: string
         }
         Update: {
           actor_id?: string
           created_at?: string | null
+          followed_user_id?: string | null
           id?: string
           is_read?: boolean | null
-          post_id?: string
+          post_id?: string | null
           reaction_emoji?: string | null
-          type?: string
+          type?: "reaction" | "reply" | "follow"
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "notifications_actor_id_fkey"
             columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_followed_user_id_fkey"
+            columns: ["followed_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

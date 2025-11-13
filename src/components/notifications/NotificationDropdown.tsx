@@ -6,9 +6,11 @@ import { NotificationItem } from "./NotificationItem";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
+type NotificationType = "reaction" | "reply" | "follow";
+
 type Notification = {
   id: string;
-  type: string; // 'reaction' | 'reply'
+  type: NotificationType;
   reaction_emoji: string | null;
   is_read: boolean | null;
   created_at: string | null;
@@ -18,7 +20,7 @@ type Notification = {
     display_name: string | null;
     avatar_url: string | null;
   } | null;
-  post: {
+  post?: {
     id: string;
     content: string;
   } | null;

@@ -6,9 +6,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { markAsRead } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
+type NotificationType = "reaction" | "reply" | "follow";
+
 type Notification = {
   id: string;
-  type: string; // 'reaction' | 'reply'
+  type: NotificationType;
   reaction_emoji: string | null;
   is_read: boolean | null;
   created_at: string | null;
@@ -18,7 +20,7 @@ type Notification = {
     display_name: string | null;
     avatar_url: string | null;
   } | null;
-  post: {
+  post?: {
     id: string;
     content: string;
   } | null;
@@ -33,6 +35,21 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  if (!notification.actor) {
+    return null;
+  }
+
+  const isFollowNotification = notification.type === "follow";
+  if (!isFollowNotification && !notification.post) {
+    return null;
+  }
+  const hasPostContext = !!notification.post;
+
+  // フォロー通知はフォロワーのプロフィールへ、それ以外はホームへ遷移させる
+  const destination = isFollowNotification
+    ? `/profile/${notification.actor.username}`
+    : "/home";
+
   const handleClick = () => {
     startTransition(async () => {
       // 未読の場合は既読にする
@@ -40,20 +57,15 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
         await markAsRead(notification.id);
         onRead?.();
       }
-      // 投稿ページに遷移（ホームフィードへのスクロールで代用）
-      router.push("/home");
+      router.push(destination);
     });
   };
 
-  if (!notification.actor || !notification.post) {
-    return null;
-  }
-
   const actorName = notification.actor.display_name || notification.actor.username;
   const postPreview =
-    notification.post.content.length > 30
+    notification.post && notification.post.content.length > 30
       ? `${notification.post.content.slice(0, 30)}...`
-      : notification.post.content;
+      : notification.post?.content ?? "";
 
   // 相対時間の表示
   const getRelativeTime = (dateString: string | null) => {
@@ -90,17 +102,17 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
         <div className="flex-1 space-y-1">
           <p className="text-sm">
             <span className="font-semibold">{actorName}</span>
-            さんがあなたの投稿に
-            {notification.type === "reply" ? (
-              "返信しました"
-            ) : (
+            {notification.type === "reply" && "さんがあなたの投稿に返信しました"}
+            {notification.type === "reaction" && (
               <>
+                さんがあなたの投稿に
                 <span className="mx-1 text-lg">{notification.reaction_emoji}</span>
                 しました
               </>
             )}
+            {notification.type === "follow" && "さんがあなたをフォローしました"}
           </p>
-          <p className="text-xs text-muted-foreground">{postPreview}</p>
+          {hasPostContext && <p className="text-xs text-muted-foreground">{postPreview}</p>}
           <p className="text-xs text-muted-foreground">{getRelativeTime(notification.created_at)}</p>
         </div>
         {!notification.is_read && <div className="h-2 w-2 rounded-full bg-blue-500 mt-2" />}
