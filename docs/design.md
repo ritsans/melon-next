@@ -1560,3 +1560,670 @@ const ERROR_MESSAGES = {
 - フォロー通知
 - 相互フォロー表示
 - おすすめユーザー機能（将来）
+
+---
+
+## プロフィール編集機能の設計
+
+### 概要
+
+ユーザーが自分のプロフィール情報を編集できる機能を提供します。表示名、アバター画像、自己紹介、興味タグの編集が可能で、メールアドレスは表示のみ（編集不可）とします。
+
+### 機能要件
+
+#### 編集可能な項目
+- **表示名（display_name）**: 必須、1-50文字
+- **アバター画像（avatar_url）**: オプション、JPEG/PNG/WebP、最大2MB、推奨サイズ400x400px
+- **自己紹介（bio）**: オプション、0-200文字
+- **興味タグ（interests）**: オプション、複数選択可能
+
+#### 表示のみの項目
+- **メールアドレス**: Supabase Authで管理、表示のみ（編集不可）
+- **ユーザー名（username）**: 一意識別子、編集不可
+
+### データモデル
+
+#### profilesテーブル（既存）
+
+```sql
+-- プロフィール情報はすでに存在するため、新規テーブル作成は不要
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  avatar_url TEXT,
+  bio TEXT,
+  interests TEXT[],
+  onboarding_completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### バリデーション制約
+
+```typescript
+// lib/validations.ts
+export const profileEditSchema = z.object({
+  display_name: z
+    .string()
+    .min(1, "表示名は必須です")
+    .max(50, "表示名は50文字以内で入力してください"),
+  bio: z
+    .string()
+    .max(200, "自己紹介は200文字以内で入力してください")
+    .optional()
+    .or(z.literal("")),
+  interests: z.array(z.string()).optional(),
+  avatar: z
+    .instanceof(File)
+    .refine((file) => file.size <= 2 * 1024 * 1024, "画像サイズは2MB以下にしてください")
+    .refine(
+      (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+      "JPEG、PNG、WebP形式の画像のみアップロード可能です"
+    )
+    .optional(),
+});
+```
+
+### Supabase Storage設計
+
+#### avatarsバケット
+
+```sql
+-- Supabase Storage設定（ダッシュボードで実施）
+バケット名: avatars
+公開アクセス: 有効
+ファイル形式: image/*
+最大ファイルサイズ: 2MB
+
+-- RLSポリシー
+-- 1. 誰でも閲覧可能
+CREATE POLICY "Avatar images are publicly accessible"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'avatars');
+
+-- 2. 認証済みユーザーは自分のアバターをアップロード可能
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'avatars' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- 3. 認証済みユーザーは自分のアバターを更新可能
+CREATE POLICY "Users can update their own avatar"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'avatars' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- 4. 認証済みユーザーは自分のアバターを削除可能
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'avatars' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+```
+
+#### ファイルパス構造
+
+```
+avatars/
+  └── {userId}/
+      └── avatar-{timestamp}.{ext}
+
+例: avatars/550e8400-e29b-41d4-a716-446655440000/avatar-1704067200000.jpg
+```
+
+### API設計（Server Actions）
+
+#### 1. プロフィール情報の更新
+
+```typescript
+// lib/profiles.ts
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+
+export async function updateUserProfile(data: {
+  display_name: string;
+  bio?: string;
+  interests?: string[];
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        display_name: data.display_name,
+        bio: data.bio || null,
+        interests: data.interests || [],
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Profile update error:", error);
+      return { success: false, error: "プロフィールの更新に失敗しました" };
+    }
+
+    // キャッシュを再検証
+    revalidatePath(`/profile/${user.username}`);
+    revalidatePath("/profile/edit");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return { success: false, error: "予期しないエラーが発生しました" };
+  }
+}
+```
+
+#### 2. アバター画像の更新
+
+```typescript
+// lib/profiles.ts
+export async function updateAvatar(
+  file: File
+): Promise<{ success: boolean; avatarUrl?: string; error?: string }> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    // 既存のアバターを削除
+    if (user.avatar_url) {
+      await deleteAvatar(user.avatar_url);
+    }
+
+    // 新しいアバターをアップロード
+    const avatarUrl = await uploadAvatar(file, user.id);
+
+    // データベースを更新
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Avatar update error:", error);
+      return { success: false, error: "アバターの更新に失敗しました" };
+    }
+
+    revalidatePath(`/profile/${user.username}`);
+    revalidatePath("/profile/edit");
+
+    return { success: true, avatarUrl };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return { success: false, error: "予期しないエラーが発生しました" };
+  }
+}
+
+export async function removeAvatar(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: "ログインが必要です" };
+    }
+
+    // Storageから削除
+    if (user.avatar_url) {
+      await deleteAvatar(user.avatar_url);
+    }
+
+    // データベースを更新
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Avatar removal error:", error);
+      return { success: false, error: "アバターの削除に失敗しました" };
+    }
+
+    revalidatePath(`/profile/${user.username}`);
+    revalidatePath("/profile/edit");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return { success: false, error: "予期しないエラーが発生しました" };
+  }
+}
+```
+
+#### 3. 画像ユーティリティ関数
+
+```typescript
+// lib/images.ts（既存ファイルに追加）
+
+const AVATARS_BUCKET = "avatars";
+
+/**
+ * アバター画像をSupabase Storageにアップロード
+ * @param file - アップロードする画像ファイル
+ * @param userId - ユーザーID
+ * @returns 公開URL
+ */
+export async function uploadAvatar(file: File, userId: string): Promise<string> {
+  const supabase = await createClient();
+
+  // ファイル名の生成: {userId}/avatar-{timestamp}.{ext}
+  const fileExt = file.name.split(".").pop();
+  const timestamp = Date.now();
+  const fileName = `${userId}/avatar-${timestamp}.${fileExt}`;
+
+  // Supabase Storageにアップロード
+  const { data, error } = await supabase.storage
+    .from(AVATARS_BUCKET)
+    .upload(fileName, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    console.error("Avatar upload error:", error);
+    throw new Error(`アバターのアップロードに失敗しました: ${error.message}`);
+  }
+
+  // 公開URLを取得
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(data.path);
+
+  return publicUrl;
+}
+
+/**
+ * アバター画像をSupabase Storageから削除
+ * @param avatarUrl - 削除するアバターの公開URL
+ */
+export async function deleteAvatar(avatarUrl: string): Promise<void> {
+  const supabase = await createClient();
+
+  // URLからパスを抽出
+  const path = getImagePathFromUrl(avatarUrl, AVATARS_BUCKET);
+  if (!path) {
+    console.warn("Invalid avatar URL:", avatarUrl);
+    return;
+  }
+
+  const { error } = await supabase.storage.from(AVATARS_BUCKET).remove([path]);
+
+  if (error) {
+    console.error("Avatar deletion error:", error);
+    // 削除エラーは致命的ではないためログのみ出力
+  }
+}
+
+/**
+ * アバター画像のバリデーション
+ * @param file - 検証する画像ファイル
+ * @returns バリデーション結果
+ */
+export function validateAvatarImage(file: File): { valid: boolean; error?: string } {
+  // ファイルサイズチェック（2MB以下）
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSize) {
+    return { valid: false, error: "画像サイズは2MB以下にしてください" };
+  }
+
+  // ファイル形式チェック
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: "JPEG、PNG、WebP形式の画像のみアップロード可能です" };
+  }
+
+  return { valid: true };
+}
+```
+
+### UIコンポーネント設計
+
+#### 1. ProfileEditForm
+
+```typescript
+// components/profile/ProfileEditForm.tsx
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { profileEditSchema } from "@/lib/validations";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const router = useRouter();
+
+  const form = useForm({
+    resolver: zodResolver(profileEditSchema),
+    defaultValues: {
+      display_name: profile.display_name || "",
+      bio: profile.bio || "",
+      interests: profile.interests || [],
+    },
+  });
+
+  // 離脱警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // フォーム変更検知
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      setHasUnsavedChanges(true);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  const onSubmit = async (data) => {
+    // 保存処理...
+    setHasUnsavedChanges(false);
+    router.push(`/profile/${profile.username}`);
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <AvatarUploader currentAvatar={profile.avatar_url} />
+
+      {/* 表示名 */}
+      <Input {...form.register("display_name")} />
+
+      {/* 自己紹介（文字数カウンター付き） */}
+      <Textarea {...form.register("bio")} maxLength={200} />
+      <p className="text-sm text-muted-foreground">
+        {form.watch("bio")?.length || 0} / 200
+      </p>
+
+      {/* 興味タグ */}
+      <TagSelector {...form.register("interests")} />
+
+      {/* メールアドレス（表示のみ） */}
+      <Input value={email} disabled className="bg-muted" />
+
+      <Button type="submit" disabled={form.formState.isSubmitting}>
+        保存
+      </Button>
+      <Button type="button" variant="outline" onClick={() => router.back()}>
+        キャンセル
+      </Button>
+    </form>
+  );
+}
+```
+
+#### 2. AvatarUploader
+
+```typescript
+// components/profile/AvatarUploader.tsx
+"use client";
+
+import { useState, useRef } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Camera, X, Loader2 } from "lucide-react";
+
+export function AvatarUploader({ currentAvatar, onUpload, onRemove }: AvatarUploaderProps) {
+  const [preview, setPreview] = useState<string | null>(currentAvatar);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // クライアントサイドバリデーション
+    const validation = validateAvatarImage(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    // プレビュー表示
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // アップロード
+    setIsUploading(true);
+    await onUpload(file);
+    setIsUploading(false);
+  };
+
+  const handleRemove = async () => {
+    setPreview(null);
+    await onRemove();
+  };
+
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar className="h-24 w-24">
+        {preview ? (
+          <AvatarImage src={preview} alt="Avatar preview" />
+        ) : (
+          <AvatarFallback>
+            <Camera className="h-10 w-10" />
+          </AvatarFallback>
+        )}
+      </Avatar>
+
+      <div className="space-y-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              アップロード中...
+            </>
+          ) : (
+            "画像を選択"
+          )}
+        </Button>
+
+        {preview && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleRemove}
+            disabled={isUploading}
+          >
+            <X className="mr-2 h-4 w-4" />
+            削除
+          </Button>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          JPEG、PNG、WebP（最大2MB）
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+### ページ構成
+
+#### プロフィール編集ページ
+
+```typescript
+// app/(main)/profile/edit/page.tsx
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata = {
+  title: "プロフィール編集",
+};
+
+export default async function ProfileEditPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // メールアドレスを取得
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const email = authUser?.email || "";
+
+  return (
+    <div className="mx-auto max-w-2xl p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>プロフィール編集</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProfileEditForm profile={user} email={email} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+#### プロフィールページへの編集ボタン追加
+
+```typescript
+// app/(main)/profile/[username]/page.tsx（既存ファイルを更新）
+
+// 自分のプロフィールの場合のみ編集ボタンを表示
+{currentUser && currentUser.id === profile.id && (
+  <Link href="/profile/edit">
+    <Button variant="outline" size="sm">
+      プロフィールを編集
+    </Button>
+  </Link>
+)}
+```
+
+### セキュリティ考慮事項
+
+1. **認証・認可**
+   - すべてのServer Actionsで `getCurrentUser()` による認証チェック
+   - 本人のプロフィールのみ編集可能
+
+2. **入力バリデーション**
+   - クライアントサイド: React Hook Form + Zod
+   - サーバーサイド: Server Actions内で再バリデーション
+
+3. **ファイルアップロード**
+   - ファイル形式の検証（MIME type）
+   - ファイルサイズの制限（2MB）
+   - Supabase Storage RLSによるアクセス制御
+
+4. **XSS対策**
+   - ユーザー入力のサニタイゼーション
+   - Next.jsの自動エスケープ機能を活用
+
+### パフォーマンス最適化
+
+1. **画像最適化**
+   - アバター画像のリサイズ（推奨: 400x400px）
+   - WebP形式の推奨
+   - CDNキャッシュの活用（Supabase Storage）
+
+2. **キャッシュ戦略**
+   - `revalidatePath()` による適切なキャッシュ更新
+   - プロフィールページと編集ページの両方を再検証
+
+3. **楽観的UI更新**
+   - アバターアップロード中のプレビュー表示
+   - フォーム送信後の即座なリダイレクト
+
+### テスト戦略
+
+1. **単体テスト**
+   - Server Actionsのテスト（`updateUserProfile`, `updateAvatar`, `removeAvatar`）
+   - バリデーションスキーマのテスト
+   - 画像ユーティリティ関数のテスト
+
+2. **統合テスト**
+   - プロフィール編集フローのE2Eテスト
+   - 画像アップロード・削除のテスト
+   - エラーハンドリングのテスト
+
+3. **手動テスト項目**
+   - 各フィールドのバリデーション
+   - 離脱警告の動作確認
+   - レスポンシブデザインの確認
+   - ブラウザ互換性の確認
+
+### 実装の段階的ロードマップ
+
+#### Phase 5.1: インフラ準備（Task 43-44）
+- Supabase Storageバケット設定
+- 画像ユーティリティ関数の実装
+
+#### Phase 5.2: バリデーションとServer Actions（Task 45-46）
+- バリデーションスキーマの作成
+- Server Actionsの実装
+
+#### Phase 5.3: UIコンポーネント（Task 47-48）
+- AvatarUploaderコンポーネント
+- ProfileEditFormコンポーネント
+
+#### Phase 5.4: ページ実装（Task 49-50）
+- プロフィール編集ページ
+- プロフィールページへの編集ボタン追加
+
+#### Phase 5.5: UX向上（Task 51）
+- 離脱警告の実装
+- 楽観的UI更新
+- トースト通知
+
+#### Phase 5.6: テストとドキュメント（Task 52）
+- 各種テストの実施
+- ドキュメント整備
