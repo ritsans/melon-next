@@ -384,7 +384,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
 
 ### Phase 5.1: インフラ準備
 
-- [ ] 43. Supabase Storageバケット設定（avatars）
+- [x] 43. Supabase Storageバケット設定（avatars）
   - Supabase Storageで`avatars`バケットを作成する
   - 公開アクセスを有効化する
   - ファイル形式を`image/*`に設定する
@@ -393,6 +393,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - ファイルパス構造: `avatars/{userId}/avatar-{timestamp}.{ext}`
   - _要件: Issue #3（プロフィール編集機能）_
   - _設計書: design.md - プロフィール編集機能の設計 > Supabase Storage設計_
+  - _実装完了: 2025-11-13 - マイグレーションファイルとセットアップガイドを作成_
 
 - [ ] 44. 画像ユーティリティ関数の拡張（アバター用）
   - `lib/images.ts`にアバター専用関数を追加する
