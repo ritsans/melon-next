@@ -432,7 +432,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
 
 ### Phase 5.3: UIコンポーネント
 
-- [ ] 47. AvatarUploaderコンポーネントの実装
+- [x] 47. AvatarUploaderコンポーネントの実装
   - `components/profile/AvatarUploader.tsx`を作成する
   - 現在のアバター画像プレビューを表示する
   - クリックまたはドラッグ&ドロップでアップロードする
@@ -442,8 +442,9 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - クライアントサイドでの画像バリデーションを実装する
   - _要件: Issue #3（プロフィール編集機能）_
   - _設計書: design.md - プロフィール編集機能の設計 > UIコンポーネント設計 > AvatarUploader_
+  - _実装完了: 2025-11-13 - 正方形プレビュー、D&D、バリデーションを実装_
 
-- [ ] 48. ProfileEditFormコンポーネントの実装
+- [x] 48. ProfileEditFormコンポーネントの実装
   - `components/profile/ProfileEditForm.tsx`を作成する
   - React Hook Form + Zodを統合する
   - フォームフィールドを実装する:
@@ -458,6 +459,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - エラーメッセージ表示を実装する
   - _要件: Issue #3（プロフィール編集機能）_
   - _設計書: design.md - プロフィール編集機能の設計 > UIコンポーネント設計 > ProfileEditForm_
+  - _実装完了: 2025-11-13 - 全フィールド、バリデーション、離脱警告を実装_
 
 ### Phase 5.4: ページ実装
 
