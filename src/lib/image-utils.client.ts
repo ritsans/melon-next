@@ -41,10 +41,7 @@ export function validateImage(file: File): { valid: boolean; error?: string } {
  * @param maxWidth - 最大幅（デフォルト: 1200px）
  * @returns リサイズ後のファイル
  */
-export async function resizeImage(
-  file: File,
-  maxWidth: number = 1200,
-): Promise<File> {
+export async function resizeImage(file: File, maxWidth: number = 1200): Promise<File> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -105,9 +102,7 @@ export async function resizeImage(
  * @param file - バリデーション対象のファイル
  * @returns バリデーション結果とエラーメッセージ
  */
-export function validateAvatarImage(
-  file: File,
-): { valid: boolean; error?: string } {
+export function validateAvatarImage(file: File): { valid: boolean; error?: string } {
   // ファイル形式チェック（GIF除外）
   if (!VALID_AVATAR_TYPES.includes(file.type)) {
     return {
@@ -157,17 +152,7 @@ export async function resizeAvatarImage(file: File): Promise<File> {
         const x = (img.width - size) / 2;
         const y = (img.height - size) / 2;
 
-        ctx.drawImage(
-          img,
-          x,
-          y,
-          size,
-          size,
-          0,
-          0,
-          AVATAR_SIZE,
-          AVATAR_SIZE,
-        );
+        ctx.drawImage(img, x, y, size, size, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
 
         // Blobに変換（画質90%で圧縮）
         canvas.toBlob(

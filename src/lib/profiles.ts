@@ -62,9 +62,7 @@ export async function updateUserProfile(data: {
  * @param file - アップロードする画像ファイル
  * @returns 成功時はsuccess: trueとavatarUrl、エラー時はerrorメッセージ
  */
-export async function updateAvatar(
-  file: File,
-): Promise<{ success: boolean; avatarUrl?: string; error?: string }> {
+export async function updateAvatar(file: File): Promise<{ success: boolean; avatarUrl?: string; error?: string }> {
   try {
     const user = await getCurrentUser();
     if (!user) {

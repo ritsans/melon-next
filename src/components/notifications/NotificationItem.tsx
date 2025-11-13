@@ -46,9 +46,7 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
   const hasPostContext = !!notification.post;
 
   // フォロー通知はフォロワーのプロフィールへ、それ以外はホームへ遷移させる
-  const destination = isFollowNotification
-    ? `/profile/${notification.actor.username}`
-    : "/home";
+  const destination = isFollowNotification ? `/profile/${notification.actor.username}` : "/home";
 
   const handleClick = () => {
     startTransition(async () => {
@@ -65,7 +63,7 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
   const postPreview =
     notification.post && notification.post.content.length > 30
       ? `${notification.post.content.slice(0, 30)}...`
-      : notification.post?.content ?? "";
+      : (notification.post?.content ?? "");
 
   // 相対時間の表示
   const getRelativeTime = (dateString: string | null) => {

@@ -72,7 +72,10 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
-          <NotificationDropdown userId={userId} onNotificationRead={() => getUnreadCount(userId).then(setUnreadCount)} />
+          <NotificationDropdown
+            userId={userId}
+            onNotificationRead={() => getUnreadCount(userId).then(setUnreadCount)}
+          />
         </DropdownMenuContent>
       </DropdownMenu>
 

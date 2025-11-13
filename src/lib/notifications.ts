@@ -45,12 +45,7 @@ async function insertNotification({ userId, actorId, type, postId, reactionEmoji
  * @param postId - 投稿ID
  * @param reactionEmoji - リアクションの絵文字
  */
-export async function createNotification(
-  userId: string,
-  actorId: string,
-  postId: string,
-  reactionEmoji: string,
-) {
+export async function createNotification(userId: string, actorId: string, postId: string, reactionEmoji: string) {
   return insertNotification({
     userId,
     actorId,

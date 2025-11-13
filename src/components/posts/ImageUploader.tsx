@@ -14,12 +14,7 @@ interface ImageUploaderProps {
   error?: string;
 }
 
-export function ImageUploader({
-  images,
-  onImagesChange,
-  maxImages = 4,
-  error,
-}: ImageUploaderProps) {
+export function ImageUploader({ images, onImagesChange, maxImages = 4, error }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,9 +141,7 @@ export function ImageUploader({
           onClick={handleClickUpload}
           className={cn(
             "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-            isDragging
-              ? "border-primary bg-primary/5"
-              : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
+            isDragging ? "border-primary bg-primary/5" : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
             displayError && "border-red-300",
           )}
         >
@@ -174,18 +167,14 @@ export function ImageUploader({
               <p className="text-sm font-medium text-gray-700">
                 {isDragging ? "ドロップして画像をアップロード" : "クリックまたはドラッグ&ドロップ"}
               </p>
-              <p className="text-xs text-gray-500">
-                JPEG、PNG、GIF、WebP（最大5MB、{maxImages}枚まで）
-              </p>
+              <p className="text-xs text-gray-500">JPEG、PNG、GIF、WebP（最大5MB、{maxImages}枚まで）</p>
             </div>
           </div>
         </div>
       )}
 
       {/* エラー表示 */}
-      {displayError && (
-        <p className="text-sm text-red-600">{displayError}</p>
-      )}
+      {displayError && <p className="text-sm text-red-600">{displayError}</p>}
 
       {/* 画像プレビュー */}
       {images.length > 0 && (
@@ -202,12 +191,7 @@ export function ImageUploader({
                 "hover:border-primary",
               )}
             >
-              <Image
-                src={getPreviewUrl(file)}
-                alt={`プレビュー ${index + 1}`}
-                fill
-                className="object-cover"
-              />
+              <Image src={getPreviewUrl(file)} alt={`プレビュー ${index + 1}`} fill className="object-cover" />
 
               {/* 削除ボタン */}
               <Button

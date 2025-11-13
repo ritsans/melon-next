@@ -71,11 +71,7 @@ export function NotificationDropdown({ userId, onNotificationRead }: Notificatio
   }
 
   if (notifications.length === 0) {
-    return (
-      <div className="py-8 text-center text-sm text-muted-foreground">
-        通知はありません
-      </div>
-    );
+    return <div className="py-8 text-center text-sm text-muted-foreground">通知はありません</div>;
   }
 
   const hasUnread = notifications.some((n) => !n.is_read);
@@ -92,11 +88,7 @@ export function NotificationDropdown({ userId, onNotificationRead }: Notificatio
       </div>
       <div className="divide-y">
         {notifications.map((notification) => (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onRead={handleNotificationClick}
-          />
+          <NotificationItem key={notification.id} notification={notification} onRead={handleNotificationClick} />
         ))}
       </div>
     </div>

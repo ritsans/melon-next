@@ -22,9 +22,9 @@ export type ReactionCount = {
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 async function notifyPostAuthor(supabase: SupabaseServerClient, postId: string, actorId: string, emoji: string) {
-    // 「Supabase 経由で投稿者を特定し、リアクションしたユーザーと絵文字情報を使って通知を作成する」専用ヘルパーです。
-    // パラメータは以下の通りです。
-    try {
+  // 「Supabase 経由で投稿者を特定し、リアクションしたユーザーと絵文字情報を使って通知を作成する」専用ヘルパーです。
+  // パラメータは以下の通りです。
+  try {
     const { data: post, error } = await supabase.from("posts").select("user_id").eq("id", postId).single();
     if (error) {
       console.error("Error fetching post:", error);

@@ -20,11 +20,7 @@ interface AvatarUploaderProps {
  * - クリックでファイル選択
  * - 画像削除機能
  */
-export function AvatarUploader({
-  currentAvatar,
-  onAvatarChange,
-  error,
-}: AvatarUploaderProps) {
+export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -118,12 +114,7 @@ export function AvatarUploader({
           )}
         >
           {hasAvatar ? (
-            <Image
-              src={previewUrl || currentAvatar || ""}
-              alt="アバタープレビュー"
-              fill
-              className="object-cover"
-            />
+            <Image src={previewUrl || currentAvatar || ""} alt="アバタープレビュー" fill className="object-cover" />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
               <User className="w-12 h-12 text-gray-400" />
@@ -140,9 +131,7 @@ export function AvatarUploader({
             onClick={handleClickUpload}
             className={cn(
               "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-              isDragging
-                ? "border-primary bg-primary/5"
-                : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
+              isDragging ? "border-primary bg-primary/5" : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
               displayError && "border-red-300",
             )}
           >
@@ -163,21 +152,14 @@ export function AvatarUploader({
                 <p className="text-sm font-medium text-gray-700">
                   {isDragging ? "ドロップして画像をアップロード" : "クリックまたはドラッグ&ドロップ"}
                 </p>
-                <p className="text-xs text-gray-500">
-                  JPEG、PNG、WebP（最大2MB、推奨: 400×400px）
-                </p>
+                <p className="text-xs text-gray-500">JPEG、PNG、WebP（最大2MB、推奨: 400×400px）</p>
               </div>
             </div>
           </div>
 
           {/* 削除ボタン */}
           {hasAvatar && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleRemoveAvatar}
-              className="w-full"
-            >
+            <Button type="button" variant="outline" onClick={handleRemoveAvatar} className="w-full">
               <X className="w-4 h-4 mr-2" />
               アバターを削除
             </Button>
@@ -186,9 +168,7 @@ export function AvatarUploader({
       </div>
 
       {/* エラー表示 */}
-      {displayError && (
-        <p className="text-sm text-red-600">{displayError}</p>
-      )}
+      {displayError && <p className="text-sm text-red-600">{displayError}</p>}
     </div>
   );
 }

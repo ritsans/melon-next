@@ -52,9 +52,7 @@ export function DeletePostDialog({ postId, open, onOpenChange, onDeleted }: Dele
             この操作は取り消せません。投稿とそれに関連するリアクションが完全に削除されます。
           </DialogDescription>
         </DialogHeader>
-        {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-        )}
+        {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>
             キャンセル

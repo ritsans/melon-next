@@ -17,10 +17,7 @@ const AVATARS_BUCKET = "avatars";
  * @param postId - 投稿ID（フォルダ名として使用）
  * @returns 公開URL
  */
-export async function uploadImage(
-  file: File,
-  postId: string,
-): Promise<string> {
+export async function uploadImage(file: File, postId: string): Promise<string> {
   const supabase = await createClient();
 
   // ファイル名の生成: {postId}/{timestamp}-{uuid}.{ext}
@@ -30,12 +27,10 @@ export async function uploadImage(
   const fileName = `${postId}/${timestamp}-${uuid}.${fileExt}`;
 
   // Supabase Storageにアップロード
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+  const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
 
   if (error) {
     console.error("Image upload error:", error);
@@ -56,10 +51,7 @@ export async function uploadImage(
  * @param postId - 投稿ID（フォルダ名として使用）
  * @returns 公開URLの配列
  */
-export async function uploadImages(
-  files: File[],
-  postId: string,
-): Promise<string[]> {
+export async function uploadImages(files: File[], postId: string): Promise<string[]> {
   const uploadPromises = files.map((file) => uploadImage(file, postId));
   return Promise.all(uploadPromises);
 }
@@ -84,10 +76,7 @@ export async function deleteImage(imagePath: string): Promise<void> {
  * @param postId - 削除する投稿のID
  * @param imageUrls - 削除する画像URLの配列（オプション）
  */
-export async function deletePostWithImages(
-  postId: string,
-  imageUrls?: string[],
-): Promise<void> {
+export async function deletePostWithImages(postId: string, imageUrls?: string[]): Promise<void> {
   const supabase = await createClient();
 
   // 画像削除
@@ -96,9 +85,7 @@ export async function deletePostWithImages(
     const validPaths = imagePaths.filter((path) => path !== "");
 
     if (validPaths.length > 0) {
-      const { error: storageError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .remove(validPaths);
+      const { error: storageError } = await supabase.storage.from(BUCKET_NAME).remove(validPaths);
 
       if (storageError) {
         console.error("Image deletion error:", storageError);
@@ -108,10 +95,7 @@ export async function deletePostWithImages(
   }
 
   // 投稿削除
-  const { error: postError } = await supabase
-    .from("posts")
-    .delete()
-    .eq("id", postId);
+  const { error: postError } = await supabase.from("posts").delete().eq("id", postId);
 
   if (postError) {
     console.error("Post deletion error:", postError);
@@ -128,10 +112,7 @@ function getImagePathFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     // URLパスから "storage/v1/object/public/gazo_images/" を削除
-    const path = urlObj.pathname.replace(
-      `/storage/v1/object/public/${BUCKET_NAME}/`,
-      "",
-    );
+    const path = urlObj.pathname.replace(`/storage/v1/object/public/${BUCKET_NAME}/`, "");
     return path;
   } catch (error) {
     console.error("Invalid URL:", url, error);
@@ -149,10 +130,7 @@ function getImagePathFromUrl(url: string): string {
  * @param userId - ユーザーID
  * @returns 公開URL
  */
-export async function uploadAvatar(
-  file: File,
-  userId: string,
-): Promise<string> {
+export async function uploadAvatar(file: File, userId: string): Promise<string> {
   const supabase = await createClient();
 
   // ファイル名の生成: {userId}/avatar-{timestamp}.{ext}
@@ -161,12 +139,10 @@ export async function uploadAvatar(
   const fileName = `${userId}/avatar-${timestamp}.${fileExt}`;
 
   // Supabase Storageにアップロード
-  const { data, error } = await supabase.storage
-    .from(AVATARS_BUCKET)
-    .upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+  const { data, error } = await supabase.storage.from(AVATARS_BUCKET).upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
 
   if (error) {
     console.error("Avatar upload error:", error);
@@ -212,10 +188,7 @@ function getAvatarPathFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     // URLパスから "storage/v1/object/public/avatars/" を削除
-    const path = urlObj.pathname.replace(
-      `/storage/v1/object/public/${AVATARS_BUCKET}/`,
-      "",
-    );
+    const path = urlObj.pathname.replace(`/storage/v1/object/public/${AVATARS_BUCKET}/`, "");
     return path;
   } catch (error) {
     console.error("Invalid avatar URL:", url, error);

@@ -127,7 +127,12 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
 
           {/* リアクション */}
           {!hideReactions && (
-            <ReactionPanel postId={post.id} reactions={post.reactions} currentUserId={currentUserId} isOwnPost={isOwnPost} />
+            <ReactionPanel
+              postId={post.id}
+              reactions={post.reactions}
+              currentUserId={currentUserId}
+              isOwnPost={isOwnPost}
+            />
           )}
 
           {/* 返信ボタン */}

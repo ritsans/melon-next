@@ -73,9 +73,7 @@ export default async function ConnectionsPage({ params, searchParams }: Connecti
 
       <Card>
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-1">
-            {profile.display_name || profile.username}のつながり
-          </h1>
+          <h1 className="text-2xl font-bold mb-1">{profile.display_name || profile.username}のつながり</h1>
           {profile.display_name && <p className="text-neutral-600 text-sm">@{profile.username}</p>}
         </CardContent>
       </Card>

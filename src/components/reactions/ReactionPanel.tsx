@@ -21,9 +21,7 @@ export function ReactionPanel({ postId, reactions, currentUserId, isOwnPost = fa
   const reactionMap = new Map(reactionCounts.map((r) => [r.emoji, r]));
 
   // ユーザーの現在のリアクションを取得（1投稿につき1リアクションのみ）
-  const userCurrentReaction = currentUserId
-    ? reactions.find((r) => r.user_id === currentUserId)?.emoji
-    : undefined;
+  const userCurrentReaction = currentUserId ? reactions.find((r) => r.user_id === currentUserId)?.emoji : undefined;
 
   // オプティミスティックUI用の状態
   const [optimisticReaction, setOptimisticReaction] = useState<string | undefined>(userCurrentReaction);
@@ -100,9 +98,7 @@ export function ReactionPanel({ postId, reactions, currentUserId, isOwnPost = fa
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm transition-colors",
               !isOwnPost && "hover:bg-neutral-100 active:bg-neutral-200",
               isOwnPost ? "cursor-not-allowed" : "disabled:opacity-50 disabled:cursor-not-allowed",
-              userReacted
-                ? "border-blue-500 bg-blue-50 text-blue-700"
-                : "border-neutral-300 bg-white text-neutral-700",
+              userReacted ? "border-blue-500 bg-blue-50 text-blue-700" : "border-neutral-300 bg-white text-neutral-700",
             )}
           >
             <span className="text-base leading-none">{emoji}</span>
