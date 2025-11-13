@@ -37,16 +37,15 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile.interests || []);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     setValue,
     control,
-    watch,
+    reset,
   } = useForm<Omit<ProfileEditFormData, "avatar">>({
     resolver: zodResolver(profileEditSchema.omit({ avatar: true })),
     defaultValues: {
@@ -56,20 +55,7 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
     },
   });
 
-  // フォーム変更検知
-  useEffect(() => {
-    const subscription = watch(() => {
-      setHasUnsavedChanges(true);
-    });
-    return () => subscription.unsubscribe();
-  }, [watch]);
-
-  // アバター変更検知
-  useEffect(() => {
-    if (avatarFile !== null) {
-      setHasUnsavedChanges(true);
-    }
-  }, [avatarFile]);
+  const hasUnsavedChanges = isDirty || avatarFile !== null;
 
   // 離脱警告
   useEffect(() => {
@@ -134,7 +120,9 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
 
       // 成功
       setSuccess("プロフィールを更新しました");
-      setHasUnsavedChanges(false);
+      reset(data);
+      setAvatarFile(null);
+      setSelectedInterests(data.interests);
 
       // 2秒後にプロフィールページにリダイレクト
       setTimeout(() => {
