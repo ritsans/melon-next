@@ -79,18 +79,24 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
-                  {profile.display_name && (
-                    <p className="text-neutral-600 text-sm">@{profile.username}</p>
-                  )}
+                  {profile.display_name && <p className="text-neutral-600 text-sm">@{profile.username}</p>}
                 </div>
 
-                {/* フォローボタン */}
-                <FollowButton
-                  targetUserId={profile.id}
-                  initialIsFollowing={followStatus.is_following}
-                  initialIsFollowedBy={followStatus.is_followed_by}
-                  currentUserId={currentUser?.id}
-                />
+                {/* 編集ボタンまたはフォローボタン */}
+                {currentUser && currentUser.id === profile.id ? (
+                  <Link href="/profile/edit">
+                    <Button variant="outline" size="sm">
+                      プロフィールを編集
+                    </Button>
+                  </Link>
+                ) : (
+                  <FollowButton
+                    targetUserId={profile.id}
+                    initialIsFollowing={followStatus.is_following}
+                    initialIsFollowedBy={followStatus.is_followed_by}
+                    currentUserId={currentUser?.id}
+                  />
+                )}
               </div>
 
               {/* フォロー・フォロワー統計 */}
@@ -152,7 +158,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         ) : (
           <div className="space-y-4">
             {postsWithReplies.map(({ post, replies }) => (
-              <PostCard key={post.id} post={post} currentUserId={currentUser?.id} hideReactions={true} replies={replies} />
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={currentUser?.id}
+                hideReactions={true}
+                replies={replies}
+              />
             ))}
           </div>
         )}

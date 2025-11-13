@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormError } from "@/components/ui/form-error";
 import { AvatarUploader } from "@/components/profile/AvatarUploader";
-import { updateUserProfile, updateAvatar } from "@/lib/profiles";
+import { updateUserProfile, updateAvatar, removeAvatar } from "@/lib/profiles";
 import { type ProfileEditFormData, profileEditSchema } from "@/lib/validations";
 
 // 興味のある分野の選択肢
@@ -37,6 +37,7 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile.interests || []);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [shouldRemoveAvatar, setShouldRemoveAvatar] = useState(false);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
 
   const {
@@ -55,7 +56,7 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
     },
   });
 
-  const hasUnsavedChanges = isDirty || avatarFile !== null;
+  const hasUnsavedChanges = isDirty || avatarFile !== null || shouldRemoveAvatar;
 
   // 離脱警告
   useEffect(() => {
@@ -83,6 +84,13 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
   // アバター変更ハンドラ
   const handleAvatarChange = (file: File | null) => {
     setAvatarFile(file);
+    // 新しいファイルが選択された場合、削除フラグをクリア
+    if (file) {
+      setShouldRemoveAvatar(false);
+    } else {
+      // nullが渡された場合は削除意図とみなす
+      setShouldRemoveAvatar(true);
+    }
   };
 
   // フォーム送信
@@ -93,6 +101,7 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
     try {
       // アバター画像の処理
       if (avatarFile) {
+        // 新しいアバターをアップロード
         setIsAvatarUpdating(true);
         const avatarResult = await updateAvatar(avatarFile);
         setIsAvatarUpdating(false);
@@ -101,9 +110,16 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
           setError(avatarResult.error || "アバターの更新に失敗しました");
           return;
         }
-      } else if (avatarFile === null && !profile.avatar_url) {
-        // アバターを削除する場合（既存アバターがあり、nullが設定されている場合）
-        // この判定は後で修正する必要があるかも
+      } else if (shouldRemoveAvatar && profile.avatar_url) {
+        // 既存のアバターを削除する場合
+        setIsAvatarUpdating(true);
+        const removeResult = await removeAvatar();
+        setIsAvatarUpdating(false);
+
+        if (!removeResult.success) {
+          setError(removeResult.error || "アバターの削除に失敗しました");
+          return;
+        }
       }
 
       // プロフィール情報の更新
@@ -122,7 +138,8 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
       setSuccess("プロフィールを更新しました");
       reset(data);
       setAvatarFile(null);
-      setSelectedInterests(data.interests);
+      setShouldRemoveAvatar(false);
+      setSelectedInterests(data.interests || []);
 
       // 2秒後にプロフィールページにリダイレクト
       setTimeout(() => {
@@ -151,26 +168,17 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
       {/* 成功メッセージ */}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-          {success}
-        </div>
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">{success}</div>
       )}
 
       {/* エラーメッセージ */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">{error}</div>}
 
       {/* アバター画像 */}
       <div>
         <Label>アバター画像</Label>
         <div className="mt-2">
-          <AvatarUploader
-            currentAvatar={profile.avatar_url}
-            onAvatarChange={handleAvatarChange}
-          />
+          <AvatarUploader currentAvatar={profile.avatar_url} onAvatarChange={handleAvatarChange} />
         </div>
       </div>
 
@@ -223,10 +231,7 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
                 onCheckedChange={() => handleInterestToggle(interest)}
                 disabled={isSubmitting || isAvatarUpdating}
               />
-              <Label
-                htmlFor={`interest-${interest}`}
-                className="cursor-pointer font-normal"
-              >
+              <Label htmlFor={`interest-${interest}`} className="cursor-pointer font-normal">
                 {interest}
               </Label>
             </div>
@@ -238,23 +243,13 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
       {/* メールアドレス（表示のみ） */}
       <div>
         <Label htmlFor="email">メールアドレス</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          disabled
-          className="mt-2 bg-gray-100 cursor-not-allowed"
-        />
+        <Input id="email" type="email" value={email} disabled className="mt-2 bg-gray-100 cursor-not-allowed" />
         <p className="text-sm text-gray-500 mt-1">メールアドレスは変更できません</p>
       </div>
 
       {/* 送信ボタン */}
       <div className="flex gap-3 pt-4">
-        <Button
-          type="submit"
-          disabled={isSubmitting || isAvatarUpdating}
-          className="flex-1"
-        >
+        <Button type="submit" disabled={isSubmitting || isAvatarUpdating} className="flex-1">
           {isSubmitting || isAvatarUpdating ? "更新中..." : "保存"}
         </Button>
         <Button
