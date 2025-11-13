@@ -418,7 +418,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - _設計書: design.md - プロフィール編集機能の設計 > データモデル > バリデーション制約_
   - _実装完了: 2025-11-13 - Zodバリデーションスキーマとエラーメッセージを実装_
 
-- [ ] 46. プロフィール編集用Server Actions実装
+- [x] 46. プロフィール編集用Server Actions実装
   - `lib/profiles.ts`を新規作成する
   - `updateUserProfile(data)` - プロフィール情報更新（display_name, bio, interests）
   - `updateAvatar(file)` - アバター画像の更新
@@ -428,6 +428,7 @@ TwitterやInstagramのようなフォロー関係機能です。ユーザー間�
   - `revalidatePath()`でプロフィールページのキャッシュを更新する
   - _要件: Issue #3（プロフィール編集機能）_
   - _設計書: design.md - プロフィール編集機能の設計 > API設計_
+  - _実装完了: 2025-11-13 - 3つのServer Actions（更新/アバター更新/アバター削除）を実装_
 
 ### Phase 5.3: UIコンポーネント
 
