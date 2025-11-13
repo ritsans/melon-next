@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 // バケット名の定数
 const BUCKET_NAME = "gazo_images";
+const AVATARS_BUCKET = "avatars";
 
 /**
  * 単一画像をSupabase Storageにアップロード
@@ -134,6 +135,90 @@ function getImagePathFromUrl(url: string): string {
     return path;
   } catch (error) {
     console.error("Invalid URL:", url, error);
+    return "";
+  }
+}
+
+// ========================================
+// アバター画像関連の関数
+// ========================================
+
+/**
+ * アバター画像をSupabase Storageにアップロード
+ * @param file - アップロードする画像ファイル
+ * @param userId - ユーザーID
+ * @returns 公開URL
+ */
+export async function uploadAvatar(
+  file: File,
+  userId: string,
+): Promise<string> {
+  const supabase = await createClient();
+
+  // ファイル名の生成: {userId}/avatar-{timestamp}.{ext}
+  const fileExt = file.name.split(".").pop();
+  const timestamp = Date.now();
+  const fileName = `${userId}/avatar-${timestamp}.${fileExt}`;
+
+  // Supabase Storageにアップロード
+  const { data, error } = await supabase.storage
+    .from(AVATARS_BUCKET)
+    .upload(fileName, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    console.error("Avatar upload error:", error);
+    throw new Error(`アバターのアップロードに失敗しました: ${error.message}`);
+  }
+
+  // 公開URLを取得
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(AVATARS_BUCKET).getPublicUrl(data.path);
+
+  return publicUrl;
+}
+
+/**
+ * アバター画像をSupabase Storageから削除
+ * @param avatarUrl - 削除するアバターの公開URL
+ */
+export async function deleteAvatar(avatarUrl: string): Promise<void> {
+  const supabase = await createClient();
+
+  // URLからパスを抽出
+  const path = getAvatarPathFromUrl(avatarUrl);
+  if (!path) {
+    console.warn("Invalid avatar URL:", avatarUrl);
+    return;
+  }
+
+  const { error } = await supabase.storage.from(AVATARS_BUCKET).remove([path]);
+
+  if (error) {
+    console.error("Avatar deletion error:", error);
+    // 削除エラーは致命的ではないためログのみ出力
+  }
+}
+
+/**
+ * アバターURLからファイルパスを抽出（内部ヘルパー関数）
+ * @param url - アバターの公開URL
+ * @returns バケット内の相対パス
+ */
+function getAvatarPathFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // URLパスから "storage/v1/object/public/avatars/" を削除
+    const path = urlObj.pathname.replace(
+      `/storage/v1/object/public/${AVATARS_BUCKET}/`,
+      "",
+    );
+    return path;
+  } catch (error) {
+    console.error("Invalid avatar URL:", url, error);
     return "";
   }
 }
