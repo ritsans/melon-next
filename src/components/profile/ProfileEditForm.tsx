@@ -226,13 +226,6 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
         <FormError error={errors.interests?.message} className="mt-2" />
       </div>
 
-      {/* メールアドレス（表示のみ） */}
-      <div>
-        <Label htmlFor="email">メールアドレス</Label>
-        <Input id="email" type="email" value={email} disabled className="mt-2 bg-gray-100 cursor-not-allowed" />
-        <p className="text-sm text-gray-500 mt-1">メールアドレスは変更できません</p>
-      </div>
-
       {/* 送信ボタン */}
       <div className="pt-4">
         <Button type="submit" disabled={isSubmitting || isAvatarUpdating} className="w-full">

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { markAsRead } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +95,7 @@ export function NotificationItem({ notification, onRead }: NotificationItemProps
     >
       <div className="flex gap-3">
         <Avatar className="h-10 w-10">
+          <AvatarImage src={notification.actor.avatar_url || undefined} alt={notification.actor.username} />
           <AvatarFallback>{actorName[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="flex-1 space-y-1">

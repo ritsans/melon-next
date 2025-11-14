@@ -105,14 +105,26 @@ export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarU
     <div className="space-y-4">
       {/* アバタープレビュー / アップロードエリア */}
       <div className="flex items-center gap-6">
-        {/* プレビュー表示 */}
+        {/* アバター（クリック・ドラッグ&ドロップ対応） */}
         <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleClickUpload}
           className={cn(
-            "relative w-32 h-32 rounded-full overflow-hidden border-4",
-            isDragging ? "border-primary" : "border-gray-200",
+            "relative w-32 h-32 rounded-full overflow-hidden border-4 cursor-pointer transition-all",
+            isDragging ? "border-primary ring-4 ring-primary/20" : "border-gray-200 hover:border-primary/50",
             displayError && "border-red-300",
           )}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
           {hasAvatar ? (
             <Image src={previewUrl || currentAvatar || ""} alt="アバタープレビュー" fill className="object-cover" />
           ) : (
@@ -120,46 +132,27 @@ export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarU
               <User className="w-12 h-12 text-gray-400" />
             </div>
           )}
+
+          {/* オーバーレイ（ホバー時に表示） */}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center group">
+            <Upload className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
         </div>
 
-        {/* アップロード/削除ボタン */}
+        {/* 説明と削除ボタン */}
         <div className="flex-1 space-y-3">
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleClickUpload}
-            className={cn(
-              "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-              isDragging ? "border-primary bg-primary/5" : "border-gray-300 hover:border-primary/50 hover:bg-gray-50",
-              displayError && "border-red-300",
-            )}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <Upload className="w-5 h-5 text-gray-500" />
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-700">
-                  {isDragging ? "ドロップして画像をアップロード" : "クリックまたはドラッグ&ドロップ"}
-                </p>
-                <p className="text-xs text-gray-500">JPEG、PNG、WebP（最大2MB、推奨: 400×400px）</p>
-              </div>
-            </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-700">アバター画像</p>
+            <p className="text-xs text-gray-500">
+              クリックまたはドラッグ&ドロップで変更
+              <br />
+              JPEG、PNG、WebP（最大2MB、推奨: 400×400px）
+            </p>
           </div>
 
           {/* 削除ボタン */}
           {hasAvatar && (
-            <Button type="button" variant="outline" onClick={handleRemoveAvatar} className="w-full">
+            <Button type="button" variant="outline" onClick={handleRemoveAvatar} size="sm">
               <X className="w-4 h-4 mr-2" />
               アバターを削除
             </Button>
