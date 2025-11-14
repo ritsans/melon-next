@@ -16,10 +16,14 @@ interface ProfilePageProps {
   params: Promise<{
     username: string;
   }>;
+  searchParams: Promise<{
+    updated?: string;
+  }>;
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default async function ProfilePage({ params, searchParams }: ProfilePageProps) {
   const { username } = await params;
+  const { updated } = await searchParams;
 
   // プロフィール情報を取得
   const profile = await getProfileByUsername(username);
@@ -59,6 +63,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* 成功メッセージ */}
+      {updated === "true" && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+          プロフィールを更新しました
+        </div>
+      )}
+
       {/* プロフィールカード */}
       <Card>
         <CardHeader>

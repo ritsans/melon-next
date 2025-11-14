@@ -34,7 +34,6 @@ interface ProfileEditFormProps {
 export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile.interests || []);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [shouldRemoveAvatar, setShouldRemoveAvatar] = useState(false);
@@ -46,7 +45,6 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
     formState: { errors, isSubmitting, isDirty },
     setValue,
     control,
-    reset,
   } = useForm<Omit<ProfileEditFormData, "avatar">>({
     resolver: zodResolver(profileEditSchema.omit({ avatar: true })),
     defaultValues: {
@@ -96,7 +94,6 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
   // フォーム送信
   const onSubmit = async (data: Omit<ProfileEditFormData, "avatar">) => {
     setError(null);
-    setSuccess(null);
 
     try {
       // アバター画像の処理
@@ -134,22 +131,13 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
         return;
       }
 
-      // 成功
-      setSuccess("プロフィールを更新しました");
-      reset(data);
-      setAvatarFile(null);
-      setShouldRemoveAvatar(false);
-      setSelectedInterests(data.interests || []);
-
-      // 2秒後にプロフィールページにリダイレクト
-      setTimeout(() => {
-        router.push(`/profile/${profile.username}`);
-      }, 2000);
+      // 成功時は即座にプロフィールページにリダイレクト
+      router.push(`/profile/${profile.username}?updated=true`);
     } catch (err) {
       console.error("Unexpected error:", err);
       setError("予期しないエラーが発生しました");
     }
-  };
+  };;
 
   // キャンセル
   const handleCancel = () => {
@@ -166,11 +154,6 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-      {/* 成功メッセージ */}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">{success}</div>
-      )}
-
       {/* エラーメッセージ */}
       {error && <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">{error}</div>}
 
