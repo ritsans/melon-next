@@ -1,7 +1,7 @@
 "use client";
 
 import { User } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FollowButton } from "@/components/follows/FollowButton";
@@ -60,6 +60,7 @@ export function FollowList({ follows, currentUserId, viewerFollowStatuses, type 
                 {/* アバター */}
                 <Link href={`/profile/${follow.profile.username}`}>
                   <Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
+                    <AvatarImage src={follow.profile.avatar_url || undefined} alt={follow.profile.username} />
                     <AvatarFallback className="bg-neutral-200 text-neutral-700">
                       {follow.profile.display_name || follow.profile.username ? (
                         getInitials(follow.profile.display_name || follow.profile.username)

@@ -7,7 +7,7 @@ import { getFollowStatus, getFollowStats } from "@/lib/follows";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostCard } from "@/components/posts/PostCard";
 import { FollowButton } from "@/components/follows/FollowButton";
 import { tagLabel } from "@/lib/tags";
@@ -76,6 +76,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
           <div className="flex items-start gap-4">
             {/* アバター */}
             <Avatar className="h-20 w-20">
+              <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
               <AvatarFallback className="bg-neutral-200 text-neutral-700 text-xl">
                 {profile.display_name || profile.username ? (
                   getInitials(profile.display_name || profile.username)
