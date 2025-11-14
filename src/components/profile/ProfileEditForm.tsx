@@ -26,12 +26,14 @@ interface ProfileEditFormProps {
     username: string;
   };
   email: string;
+  /** 未保存の変更があるかどうかを親コンポーネントに通知するコールバック */
+  onMihozonChange?: (mihozon: boolean) => void;
 }
 
 /**
  * プロフィール編集フォームコンポーネント
  */
-export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
+export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEditFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(profile.interests || []);
@@ -56,17 +58,27 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
 
   const hasUnsavedChanges = isDirty || avatarFile !== null || shouldRemoveAvatar;
 
+  // 未保存の変更を親コンポーネントに通知
+  useEffect(() => {
+    onMihozonChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onMihozonChange]);
+
   // 離脱警告
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
+    if (!hasUnsavedChanges) {
+      window.onbeforeunload = null;
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault(); // Chromeでダイアログを表示させるために必要
+      return "";
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.onbeforeunload = handleBeforeUnload;
+    return () => {
+      window.onbeforeunload = null;
+    };
   }, [hasUnsavedChanges]);
 
   // 興味タグのトグル
@@ -138,15 +150,6 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
       setError("予期しないエラーが発生しました");
     }
   };;
-
-  // キャンセル
-  const handleCancel = () => {
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm("変更内容が保存されていません。破棄してよろしいですか?");
-      if (!confirmed) return;
-    }
-    router.back();
-  };
 
   // 自己紹介の文字数
   const bioValue = useWatch({ control, name: "bio" }) || "";
@@ -231,18 +234,9 @@ export function ProfileEditForm({ profile, email }: ProfileEditFormProps) {
       </div>
 
       {/* 送信ボタン */}
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" disabled={isSubmitting || isAvatarUpdating} className="flex-1">
+      <div className="pt-4">
+        <Button type="submit" disabled={isSubmitting || isAvatarUpdating} className="w-full">
           {isSubmitting || isAvatarUpdating ? "更新中..." : "保存"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleCancel}
-          disabled={isSubmitting || isAvatarUpdating}
-          className="flex-1"
-        >
-          キャンセル
         </Button>
       </div>
     </form>

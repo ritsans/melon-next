@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, getProfile } from "@/lib/auth";
-import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { ProfileEditPageContent } from "@/components/profile/ProfileEditPageContent";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = {
   title: "プロフィール編集",
@@ -33,16 +32,5 @@ export default async function ProfileEditPage() {
   } = await supabase.auth.getUser();
   const email = authUser?.email || "";
 
-  return (
-    <div className="mx-auto max-w-2xl p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>プロフィール編集</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProfileEditForm profile={profile} email={email} />
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <ProfileEditPageContent profile={profile} email={email} />;
 }
