@@ -22,6 +22,7 @@ export type PostWithProfile = {
     avatar_url: string | null;
   };
   reactions: Reaction[];
+  nested_replies?: PostWithProfile[]; // ネストされた返信（第2階層）
 };
 
 /**
@@ -278,6 +279,106 @@ export async function getReplies(postId: string): Promise<PostWithProfile[]> {
       reactions: [], // 返信にはリアクション機能なし
     })) || []
   );
+}
+
+/**
+ * Get replies with nested replies (2-level deep) - Solves N+1 problem
+ * Uses Supabase relational query to fetch all replies in a single query
+ * @param postId - The ID of the parent post
+ * @returns Array of first-level replies with nested second-level replies
+ */
+export async function getRepliesWithNested(postId: string): Promise<PostWithProfile[]> {
+  const supabase = await createClient();
+
+  // 第1階層の返信を取得
+  const { data: firstLevelReplies, error: firstLevelError } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      image_urls,
+      parent_post_id,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url)
+    `,
+    )
+    .eq("parent_post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (firstLevelError) {
+    console.error("Error fetching first-level replies:", firstLevelError);
+    return [];
+  }
+
+  if (!firstLevelReplies || firstLevelReplies.length === 0) {
+    return [];
+  }
+
+  // 第1階層の返信IDを収集
+  const firstLevelIds = firstLevelReplies.map((reply) => reply.id);
+
+  // 第2階層の返信を一括取得（N+1問題を回避）
+  const { data: secondLevelReplies, error: secondLevelError } = await supabase
+    .from("posts")
+    .select(
+      `
+      id,
+      content,
+      tags,
+      image_urls,
+      parent_post_id,
+      created_at,
+      user_id,
+      profile:profiles(username, display_name, avatar_url)
+    `,
+    )
+    .in("parent_post_id", firstLevelIds)
+    .order("created_at", { ascending: true });
+
+  if (secondLevelError) {
+    console.error("Error fetching second-level replies:", secondLevelError);
+  }
+
+  // 第2階層の返信をparent_post_idでグループ化
+  const nestedRepliesMap = new Map<string, PostWithProfile[]>();
+  secondLevelReplies?.forEach((reply) => {
+    const parentId = reply.parent_post_id;
+    if (!parentId) return;
+
+    const transformed: PostWithProfile = {
+      id: reply.id,
+      content: reply.content,
+      tags: reply.tags,
+      image_urls: reply.image_urls as string[] | null,
+      parent_post_id: reply.parent_post_id,
+      created_at: reply.created_at,
+      user_id: reply.user_id,
+      profile: Array.isArray(reply.profile) ? reply.profile[0] : reply.profile,
+      reactions: [],
+    };
+
+    if (!nestedRepliesMap.has(parentId)) {
+      nestedRepliesMap.set(parentId, []);
+    }
+    nestedRepliesMap.get(parentId)!.push(transformed);
+  });
+
+  // 第1階層の返信に第2階層の返信を追加
+  return firstLevelReplies.map((reply) => ({
+    id: reply.id,
+    content: reply.content,
+    tags: reply.tags,
+    image_urls: reply.image_urls as string[] | null,
+    parent_post_id: reply.parent_post_id,
+    created_at: reply.created_at,
+    user_id: reply.user_id,
+    profile: Array.isArray(reply.profile) ? reply.profile[0] : reply.profile,
+    reactions: [],
+    nested_replies: nestedRepliesMap.get(reply.id) || [],
+  }));
 }
 
 /**

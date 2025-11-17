@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatRelativeTime } from "@/lib/utils";
 import type { PostWithProfile } from "@/lib/posts";
-import { getReplies } from "@/lib/posts";
 import { DeletePostDialog } from "./DeletePostDialog";
 import { ReplyForm } from "./ReplyForm";
 import { MoreVertical, Trash2, MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type ReplyCardProps = {
   reply: PostWithProfile;
@@ -25,33 +25,25 @@ type ReplyCardProps = {
 };
 
 export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyCardProps) {
+  const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [replyFormOpen, setReplyFormOpen] = useState(false);
-  const [nestedReplies, setNestedReplies] = useState<PostWithProfile[]>([]);
   const displayName = reply.profile.display_name || reply.profile.username;
   const isOwnReply = currentUserId === reply.user_id;
   const isMaxDepth = depth >= 1; // 第2階層が最大
+  const nestedReplies = reply.nested_replies || [];
 
-  // 第1階層の場合のみ、ネストされた返信を取得
-  useEffect(() => {
-    if (depth === 0) {
-      getReplies(reply.id).then((replies) => setNestedReplies(replies));
-    }
-  }, [reply.id, depth]);
-
-  // 返信が成功したらネストされた返信を再取得
+  // 返信が成功したらページを再読み込み（サーバーから最新データを取得）
   const handleReplySuccess = () => {
     setReplyFormOpen(false);
-    if (depth === 0) {
-      getReplies(reply.id).then((replies) => setNestedReplies(replies));
-    }
+    router.refresh();
   };
 
-  // 返信が削除されたらネストされた返信を再取得 / 親に通知
+  // 返信が削除されたらページを再読み込み / 親に通知
   const handleReplyDeleted = () => {
     if (depth === 0) {
-      // 第1階層：ネストされた返信を再取得
-      getReplies(reply.id).then((replies) => setNestedReplies(replies));
+      // 第1階層：ページ全体を再読み込み
+      router.refresh();
     } else {
       // 第2階層：親のコールバックを呼び出す
       onDeleted?.();

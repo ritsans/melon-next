@@ -11,11 +11,14 @@ import Link from "next/link";
 type FollowListProps = {
   follows: FollowWithProfile[];
   currentUserId?: string;
-  viewerFollowStatuses?: Map<string, { is_following: boolean; is_followed_by: boolean }>;
+  viewerFollowStatuses?: Array<[string, { is_following: boolean; is_followed_by: boolean }]>;
   type: "followers" | "following";
 };
 
 export function FollowList({ follows, currentUserId, viewerFollowStatuses, type }: FollowListProps) {
+  // 配列をMapに変換（サーバーからクライアントへのシリアライズ対応）
+  const statusMap = viewerFollowStatuses ? new Map(viewerFollowStatuses) : undefined;
+
   // アバター用のイニシャル取得
   const getInitials = (name: string) => {
     return name
@@ -47,7 +50,7 @@ export function FollowList({ follows, currentUserId, viewerFollowStatuses, type 
     <div className="space-y-3">
       {follows.map((follow) => {
         const userId = getUserId(follow);
-        const followStatus = viewerFollowStatuses?.get(userId) || {
+        const followStatus = statusMap?.get(userId) || {
           is_following: false,
           is_followed_by: false,
         };

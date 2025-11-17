@@ -1,4 +1,4 @@
-import { getReplies } from "@/lib/posts";
+import { getRepliesWithNested } from "@/lib/posts";
 import { ReplyCard } from "./ReplyCard";
 
 type ReplyListProps = {
@@ -7,7 +7,8 @@ type ReplyListProps = {
 };
 
 export async function ReplyList({ postId, currentUserId }: ReplyListProps) {
-  const replies = await getReplies(postId);
+  // N+1問題を解決: ネストされた返信を一括取得
+  const replies = await getRepliesWithNested(postId);
 
   if (replies.length === 0) {
     return null;

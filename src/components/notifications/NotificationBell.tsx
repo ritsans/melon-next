@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -18,22 +18,26 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
   const [isOpen, setIsOpen] = useState(false);
   const [lastPolled, setLastPolled] = useState<Date | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const debugTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ポーリング: 30秒ごとに未読数を更新
-  // 開発環境ではポーリングを無効化、本番環境では有効化
   useEffect(() => {
     const fetchUnreadCount = async () => {
       const count = await getUnreadCount(userId);
       setUnreadCount(count);
       setLastPolled(new Date());
 
-      // デバッグ表示を3秒間だけ表示
-      setShowDebug(true);
-      setTimeout(() => setShowDebug(false), 3000);
+      // デバッグ表示を3秒間だけ表示（開発環境のみ）
+      if (process.env.NODE_ENV !== "production") {
+        setShowDebug(true);
+        // 既存のタイムアウトをクリア
+        if (debugTimeoutRef.current) {
+          clearTimeout(debugTimeoutRef.current);
+        }
+        // 新しいタイムアウトを設定
+        debugTimeoutRef.current = setTimeout(() => setShowDebug(false), 3000);
+      }
     };
-
-    // 初回取得
-    fetchUnreadCount();
 
     // 本番環境のみポーリングを有効化（開発環境では無効）
     const isProduction = process.env.NODE_ENV === "production";
@@ -42,6 +46,7 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
     // クリーンアップ
     return () => {
       if (interval) clearInterval(interval);
+      if (debugTimeoutRef.current) clearTimeout(debugTimeoutRef.current);
     };
   }, [userId]);
 

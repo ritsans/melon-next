@@ -1,4 +1,4 @@
-import { getPostsByTag, getReplies } from "@/lib/posts";
+import { getPostsByTag, getRepliesWithNested } from "@/lib/posts";
 import { PostCard } from "@/components/posts/PostCard";
 import { getCurrentUser } from "@/lib/auth";
 import { tagLabel } from "@/lib/tags";
@@ -11,11 +11,11 @@ export default async function TagPage({ params }: { params: Params }) {
   const user = await getCurrentUser();
   const label = tagLabel(slug);
 
-  // 各投稿のリプライを取得
+  // 各投稿のリプライをネストされた返信と一緒に取得（N+1問題を回避）
   const postsWithReplies = await Promise.all(
     posts.map(async (post) => ({
       post,
-      replies: await getReplies(post.id),
+      replies: await getRepliesWithNested(post.id),
     })),
   );
 

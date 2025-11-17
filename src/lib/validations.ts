@@ -94,7 +94,7 @@ export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export const profileEditSchema = z.object({
   display_name: z.string().min(1, "表示名は必須です").max(50, "表示名は50文字以内で入力してください"),
   bio: z.string().max(200, "自己紹介は200文字以内で入力してください").optional().or(z.literal("")),
-  interests: z.array(z.string()).optional(),
+  interests: z.array(z.string()).max(5, "興味のある分野は最大5つまで選択可能です").optional(),
   avatar: z
     .instanceof(File)
     .refine((file) => file.size <= 2 * 1024 * 1024, "画像サイズは2MB以下にしてください")

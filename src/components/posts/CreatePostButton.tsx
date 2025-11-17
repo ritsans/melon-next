@@ -19,7 +19,7 @@ import { PenSquare } from "lucide-react";
 export function CreatePostButton() {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = async (data: PostFormData) => {
+  const handleSubmit = async (data: PostFormData & { images?: File[] }) => {
     const result = await createPost(data);
     if (result.success) {
       setOpen(false);

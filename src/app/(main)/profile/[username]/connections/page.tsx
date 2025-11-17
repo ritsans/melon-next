@@ -37,24 +37,20 @@ export default async function ConnectionsPage({ params, searchParams }: Connecti
 
   // 現在のユーザーが各ユーザーとどういう関係にあるかを取得
   const followerStatuses = currentUser
-    ? new Map(
-        await Promise.all(
-          followers.map(async (follow) => {
-            const status = await getFollowStatus(follow.follower_id);
-            return [follow.follower_id, status] as const;
-          }),
-        ),
+    ? await Promise.all(
+        followers.map(async (follow) => {
+          const status = await getFollowStatus(follow.follower_id);
+          return [follow.follower_id, status] as [string, { is_following: boolean; is_followed_by: boolean }];
+        }),
       )
     : undefined;
 
   const followingStatuses = currentUser
-    ? new Map(
-        await Promise.all(
-          following.map(async (follow) => {
-            const status = await getFollowStatus(follow.following_id);
-            return [follow.following_id, status] as const;
-          }),
-        ),
+    ? await Promise.all(
+        following.map(async (follow) => {
+          const status = await getFollowStatus(follow.following_id);
+          return [follow.following_id, status] as [string, { is_following: boolean; is_followed_by: boolean }];
+        }),
       )
     : undefined;
 

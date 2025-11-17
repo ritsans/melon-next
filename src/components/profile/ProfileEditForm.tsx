@@ -85,10 +85,21 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
 
   // 興味タグのトグル
   const handleInterestToggle = (interest: string) => {
-    const newInterests = selectedInterests.includes(interest)
-      ? selectedInterests.filter((i) => i !== interest)
-      : [...selectedInterests, interest];
+    // 既に選択されている場合は削除
+    if (selectedInterests.includes(interest)) {
+      const newInterests = selectedInterests.filter((i) => i !== interest);
+      setSelectedInterests(newInterests);
+      setValue("interests", newInterests, { shouldValidate: true });
+      return;
+    }
 
+    // 最大5つまで選択可能
+    if (selectedInterests.length >= 5) {
+      return;
+    }
+
+    // 新しい興味を追加
+    const newInterests = [...selectedInterests, interest];
     setSelectedInterests(newInterests);
     setValue("interests", newInterests, { shouldValidate: true });
   };
@@ -212,19 +223,27 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
         <Label>興味のある分野</Label>
         <p className="text-sm text-gray-500 mt-1 mb-3">最大5つまで選択可能（省略可）</p>
         <div className="flex flex-wrap gap-3">
-          {INTEREST_OPTIONS.map((interest) => (
-            <div key={interest} className="flex items-center space-x-2">
-              <Checkbox
-                id={`interest-${interest}`}
-                checked={selectedInterests.includes(interest)}
-                onCheckedChange={() => handleInterestToggle(interest)}
-                disabled={isSubmitting || isAvatarUpdating}
-              />
-              <Label htmlFor={`interest-${interest}`} className="cursor-pointer font-normal">
-                {interest}
-              </Label>
-            </div>
-          ))}
+          {INTEREST_OPTIONS.map((interest) => {
+            const isSelected = selectedInterests.includes(interest);
+            const isDisabled = isSubmitting || isAvatarUpdating || (!isSelected && selectedInterests.length >= 5);
+
+            return (
+              <div key={interest} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`interest-${interest}`}
+                  checked={isSelected}
+                  onCheckedChange={() => handleInterestToggle(interest)}
+                  disabled={isDisabled}
+                />
+                <Label
+                  htmlFor={`interest-${interest}`}
+                  className={`font-normal ${isDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                >
+                  {interest}
+                </Label>
+              </div>
+            );
+          })}
         </div>
         <FormError error={errors.interests?.message} className="mt-2" />
       </div>

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPostById, getReplies } from "@/lib/posts";
+import { getPostById, getRepliesWithNested } from "@/lib/posts";
 import { getCurrentUser } from "@/lib/auth";
 import { PostCard } from "@/components/posts/PostCard";
 
@@ -20,8 +20,8 @@ export default async function PostDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // リプライを取得
-  const replies = await getReplies(id);
+  // リプライをネストされた返信と一緒に取得（N+1問題を回避）
+  const replies = await getRepliesWithNested(id);
 
   // リアクション用に現在のユーザーを取得
   const user = await getCurrentUser();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from "react";
 import Image from "next/image";
 import { Upload, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,26 @@ export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarU
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // プレビューURLの生成とクリーンアップ（Browser APIとの同期）
+  useEffect(() => {
+    if (!avatarFile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPreviewUrl(null);
+      return;
+    }
+
+    // 新しいURLを生成
+    const url = URL.createObjectURL(avatarFile);
+    setPreviewUrl(url);
+
+    // クリーンアップ: アンマウント時またはファイル変更時に破棄
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [avatarFile]);
 
   // ドラッグ&ドロップ - ドラッグオーバー
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -73,9 +92,8 @@ export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarU
       return;
     }
 
-    // プレビューURL生成
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    // ファイルを設定（useEffectでプレビューURLが生成される）
+    setAvatarFile(file);
 
     // 親コンポーネントに通知
     onAvatarChange(file);
@@ -83,7 +101,7 @@ export function AvatarUploader({ currentAvatar, onAvatarChange, error }: AvatarU
 
   // アバター削除
   const handleRemoveAvatar = () => {
-    setPreviewUrl(null);
+    setAvatarFile(null);
     setValidationError("");
     onAvatarChange(null);
 

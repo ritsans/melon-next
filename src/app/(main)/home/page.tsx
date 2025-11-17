@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getFollowingPosts, getReplies } from "@/lib/posts";
+import { getFollowingPosts, getRepliesWithNested } from "@/lib/posts";
 import { PostCard } from "@/components/posts/PostCard";
 import { CreatePostButton } from "@/components/posts/CreatePostButton";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,11 @@ export default async function HomePage() {
   const posts = await getFollowingPosts();
   const user = await getCurrentUser();
 
-  // 各投稿のリプライを取得
+  // 各投稿のリプライをネストされた返信と一緒に取得（N+1問題を回避）
   const postsWithReplies = await Promise.all(
     posts.map(async (post) => ({
       post,
-      replies: await getReplies(post.id),
+      replies: await getRepliesWithNested(post.id),
     })),
   );
 

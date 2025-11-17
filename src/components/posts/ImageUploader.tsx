@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from "react";
 import Image from "next/image";
 import { X, Upload, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,25 @@ interface ImageUploaderProps {
 export function ImageUploader({ images, onImagesChange, maxImages = 4, error }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const draggedIndexRef = useRef<number | null>(null);
+
+  // プレビューURLの生成とクリーンアップ
+  useEffect(() => {
+    // 古いURLを破棄
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+
+    // 新しいURLを生成
+    const newUrls = images.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(newUrls);
+
+    // クリーンアップ: アンマウント時または画像変更時に破棄
+    return () => {
+      newUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images]);
 
   // ドラッグ&ドロップ - ドラッグオーバー
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -123,11 +140,6 @@ export function ImageUploader({ images, onImagesChange, maxImages = 4, error }: 
     draggedIndexRef.current = null;
   };
 
-  // 画像プレビューURL生成
-  const getPreviewUrl = (file: File): string => {
-    return URL.createObjectURL(file);
-  };
-
   const displayError = error || validationError;
 
   return (
@@ -191,7 +203,7 @@ export function ImageUploader({ images, onImagesChange, maxImages = 4, error }: 
                 "hover:border-primary",
               )}
             >
-              <Image src={getPreviewUrl(file)} alt={`プレビュー ${index + 1}`} fill className="object-cover" />
+              <Image src={previewUrls[index] || ""} alt={`プレビュー ${index + 1}`} fill className="object-cover" />
 
               {/* 削除ボタン */}
               <Button

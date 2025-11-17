@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toggleReaction } from "@/lib/reactions";
 import type { Reaction } from "@/lib/reactions";
 import { aggregateReactions, PRESET_EMOJIS } from "@/lib/reaction-utils";
@@ -26,6 +26,11 @@ export function ReactionPanel({ postId, reactions, currentUserId, isOwnPost = fa
   // オプティミスティックUI用の状態
   const [optimisticReaction, setOptimisticReaction] = useState<string | undefined>(userCurrentReaction);
   const [isPending, startTransition] = useTransition();
+
+  // userCurrentReaction が変わった時に optimisticReaction を同期
+  useEffect(() => {
+    setOptimisticReaction(userCurrentReaction);
+  }, [userCurrentReaction]);
 
   // Get all emojis to display (existing reactions + unreacted preset emojis)
   const displayEmojis = PRESET_EMOJIS.map((emoji) => {

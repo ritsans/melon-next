@@ -161,7 +161,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
             </div>
           )}
 
-          {/* リプライ一覧 */}
+          {/* リプライ一覧（ネストされた返信を含む） */}
           {replies.length > 0 && (
             <div className="mt-4 space-y-3 border-l-2 border-neutral-200 pl-4">
               {replies.map((reply) => (
