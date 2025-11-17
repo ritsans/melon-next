@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { followUser, unfollowUser } from "@/lib/follows";
 import { Button } from "@/components/ui/button";
 import { UserPlus, UserMinus } from "lucide-react";
@@ -42,7 +43,7 @@ export function FollowButton({
       if (!result.success) {
         // Revert optimistic update on error
         setOptimisticIsFollowing(wasFollowing);
-        console.error("Failed to update follow status:", result.error);
+        toast.error(result.error || "フォロー状態の更新に失敗しました");
       }
     });
   };

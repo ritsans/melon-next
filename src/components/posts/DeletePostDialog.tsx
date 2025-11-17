@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,9 +33,10 @@ export function DeletePostDialog({ postId, open, onOpenChange, onDeleted }: Dele
 
     if (result.success) {
       onOpenChange(false);
+      toast.success("投稿を削除しました");
       onDeleted?.(); // 削除成功時にコールバックを実行
     } else {
-      setError(result.error || "削除に失敗しました");
+      toast.error(result.error || "削除に失敗しました");
     }
 
     setIsDeleting(false);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { createReply } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,9 +29,10 @@ export function ReplyForm({ parentPostId, onSuccess, onCancel }: ReplyFormProps)
 
       if (result.success) {
         setContent("");
+        toast.success("返信しました");
         onSuccess?.();
       } else {
-        setError(result.error || "返信の作成に失敗しました");
+        toast.error(result.error || "返信の作成に失敗しました");
       }
     });
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +23,7 @@ export function CreatePostButton() {
     const result = await createPost(data);
     if (result.success) {
       setOpen(false);
+      toast.success("投稿を作成しました");
     }
     return result;
   };

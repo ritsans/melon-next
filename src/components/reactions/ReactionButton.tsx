@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { toggleReaction } from "@/lib/reactions";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +39,7 @@ export function ReactionButton({ postId, emoji, count, userReacted }: ReactionBu
         // Revert optimistic update on error
         setOptimisticUserReacted(userReacted);
         setOptimisticCount(count);
-        console.error("Failed to toggle reaction:", result.error);
+        toast.error(result.error || "リアクションの更新に失敗しました");
       }
     });
   };

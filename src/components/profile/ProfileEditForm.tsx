@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ interface ProfileEditFormProps {
 /**
  * プロフィール編集フォームコンポーネント
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEditFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
         setIsAvatarUpdating(false);
 
         if (!avatarResult.success) {
-          setError(avatarResult.error || "アバターの更新に失敗しました");
+          toast.error(avatarResult.error || "アバターの更新に失敗しました");
           return;
         }
       } else if (shouldRemoveAvatar && profile.avatar_url) {
@@ -126,7 +128,7 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
         setIsAvatarUpdating(false);
 
         if (!removeResult.success) {
-          setError(removeResult.error || "アバターの削除に失敗しました");
+          toast.error(removeResult.error || "アバターの削除に失敗しました");
           return;
         }
       }
@@ -139,15 +141,16 @@ export function ProfileEditForm({ profile, email, onMihozonChange }: ProfileEdit
       });
 
       if (!result.success) {
-        setError(result.error || "プロフィールの更新に失敗しました");
+        toast.error(result.error || "プロフィールの更新に失敗しました");
         return;
       }
 
-      // 成功時は即座にプロフィールページにリダイレクト
-      router.push(`/profile/${profile.username}?updated=true`);
+      // 成功時はトースト通知を表示してプロフィールページにリダイレクト
+      toast.success("プロフィールを更新しました");
+      router.push(`/profile/${profile.username}`);
     } catch (err) {
       console.error("Unexpected error:", err);
-      setError("予期しないエラーが発生しました");
+      toast.error("予期しないエラーが発生しました");
     }
   };;
 
