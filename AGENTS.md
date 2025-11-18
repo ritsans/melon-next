@@ -32,3 +32,10 @@
 ## Security & Configuration Tips
 - Never commit secrets; use `.env.local` per CLAUDE.md. Confirm Supabase Storage buckets (e.g., `avatars`, post images) have correct RLS before deploying.
 - When adding new UI, ensure server/client boundaries are respected to avoid RSC directive violations, and document any new notifications or reactions in `docs/tasks.md`.
+
+## Code Review Guidelines
+- **Spec & Plan Alignment** — Verify every change matches `docs/design.md` and `docs/tasks.md`, and call out any deviation.
+- **Rule Compliance** — Ensure all naming, UI, and environment rules defined in `CLAUDE.md` are satisfied.
+- **Security** — Look for missing authorization, weak validation, and secret leakage risks, and document any concern.
+- **Performance** — Flag N+1s, inefficient queries, memory leaks, and unnecessary re-renders or heavy effects.
+- **Design Quality** — Evaluate adherence to SOLID/DRY, proper separation of concerns, and robust error handling; include improvement suggestions with each finding.
