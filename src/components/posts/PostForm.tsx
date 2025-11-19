@@ -108,12 +108,6 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
         </div>
       </div>
 
-      {/* Image Upload */}
-      <div className="space-y-2">
-        <Label>画像（任意・最大4枚）</Label>
-        <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
-      </div>
-
       {/* Tag Selection */}
       <div className="space-y-3">
         <Label>タグを選択または追加</Label>
@@ -173,6 +167,9 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
               新しいタグを入力
             </button>
           )}
+
+
+          
         </div>
 
         {/* Custom Tag Input */}
@@ -211,6 +208,12 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
         )}
 
         <FormError error={errors.tags?.message} />
+      </div>
+
+    {/* Image Upload */}
+      <div className="space-y-2">
+        <Label>画像（任意・最大4枚）</Label>
+        <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
       </div>
 
       {/* Error Message */}
