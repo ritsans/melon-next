@@ -57,7 +57,9 @@ export async function Header() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href={`/profile/${profile.username}`}>プロフィール</Link>
+                    <Link href={`/profile/${profile.username}`} className="cursor-pointer">
+                      プロフィール
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>

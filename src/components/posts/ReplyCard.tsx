@@ -51,6 +51,7 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
   };
 
   return (
+    //                                         リプライ部品の背景が固定されるのたぶんここ
     <div className={`flex gap-3 rounded-lg p-3 ${depth === 0 ? "bg-accent/30" : "bg-accent/50"}`}>
       {/* ユーザーアバター */}
       <Link href={`/profile/${reply.profile.username}`} className="shrink-0">
@@ -90,7 +91,7 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
+                  className="cursor-pointer text-destructive focus:text-destructive"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -109,7 +110,7 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
         />
 
         {/* 返信コンテンツ */}
-        <p className="whitespace-pre-wrap wrap-break-word text-sm text-foreground">{reply.content}</p>
+        <p className="whitespace-pre-wrap wrap-break-word text-sm">{reply.content}</p>
 
         {/* 返信ボタン（第1階層のみ） */}
         {!isMaxDepth && currentUserId && (
