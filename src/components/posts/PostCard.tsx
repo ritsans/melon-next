@@ -152,7 +152,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
 
           {/* 返信フォーム */}
           {replyFormOpen && currentUserId && (
-            <div className="mt-3 rounded-lg border border-border bg-accent p-3">
+            <div className="mt-3 rounded-lg border border-border p-3">
               <ReplyForm
                 parentPostId={post.id}
                 onSuccess={() => setReplyFormOpen(false)}

@@ -52,7 +52,7 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
 
   return (
     //                                         リプライ部品の背景が固定されるのたぶんここ
-    <div className={`flex gap-3 rounded-lg p-3 ${depth === 0 ? "bg-accent/30" : "bg-accent/50"}`}>
+    <div className={`flex gap-3 rounded-lg p-3`}>
       {/* ユーザーアバター */}
       <Link href={`/profile/${reply.profile.username}`} className="shrink-0">
         <Avatar className="h-8 w-8">
@@ -129,7 +129,7 @@ export function ReplyCard({ reply, currentUserId, depth = 0, onDeleted }: ReplyC
 
         {/* 返信フォーム */}
         {replyFormOpen && currentUserId && !isMaxDepth && (
-          <div className="mt-2 rounded-lg border border-border bg-background p-2">
+          <div className="mt-2 rounded-lg border border-border p-2">
             <ReplyForm
               parentPostId={reply.id}
               onSuccess={handleReplySuccess}
