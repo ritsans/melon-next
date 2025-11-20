@@ -21,7 +21,7 @@ export async function Header() {
     <header className="border-b bg-white">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* ロゴ/タイトル */}
-        <Link href="/home" className="text-2xl font-bold text-neutral-900 hover:text-neutral-700">
+        <Link href="/home" className="text-2xl font-bold text-foreground hover:text-primary">
           Melon
         </Link>
 
@@ -29,7 +29,7 @@ export async function Header() {
         <nav className="flex items-center gap-4">
           {user && profile ? (
             <>
-              <Link href="/home" className="text-sm font-medium text-neutral-700 hover:text-neutral-900">
+              <Link href="/home" className="text-sm font-medium text-foreground hover:text-primary">
                 ホーム
               </Link>
 
@@ -52,7 +52,7 @@ export async function Header() {
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium">{profile.display_name || profile.username}</p>
-                      <p className="text-xs text-neutral-500">@{profile.username}</p>
+                      <p className="text-xs text-muted-foreground">@{profile.username}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />

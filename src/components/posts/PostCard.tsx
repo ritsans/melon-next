@@ -61,13 +61,13 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
             <div className="flex items-center gap-2">
               <Link
                 href={`/profile/${post.profile.username}`}
-                className="font-semibold text-neutral-900 hover:underline"
+                className="font-semibold text-foreground hover:underline"
               >
                 {displayName}
               </Link>
-              <span className="text-sm text-neutral-500">@{post.profile.username}</span>
-              <span className="text-sm text-neutral-400">·</span>
-              <span className="text-sm text-neutral-500" suppressHydrationWarning>
+              <span className="text-sm text-muted-foreground">@{post.profile.username}</span>
+              <span className="text-sm text-muted-foreground/70">·</span>
+              <span className="text-sm text-muted-foreground" suppressHydrationWarning>
                 {formatRelativeTime(post.created_at)}
               </span>
             </div>
@@ -110,7 +110,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
       <CardContent className="pt-0">
         {/* 投稿コンテンツ - ユーザー情報に合わせてオフセット */}
         <div className="ml-[52px] space-y-4">
-          <p className="whitespace-pre-wrap wrap-break-word text-neutral-900">{post.content}</p>
+          <p className="whitespace-pre-wrap wrap-break-word text-foreground">{post.content}</p>
 
           {/* 画像 */}
           {post.image_urls && post.image_urls.length > 0 && (
@@ -142,7 +142,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
                 variant="ghost"
                 size="sm"
                 onClick={() => setReplyFormOpen(!replyFormOpen)}
-                className="h-8 gap-1 text-neutral-600 hover:text-blue-600"
+                className="h-8 gap-1 text-muted-foreground hover:text-primary"
               >
                 <MessageCircle className="h-4 w-4" />
                 <span className="text-sm">返信</span>
@@ -152,7 +152,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
 
           {/* 返信フォーム */}
           {replyFormOpen && currentUserId && (
-            <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+            <div className="mt-3 rounded-lg border border-border bg-accent p-3">
               <ReplyForm
                 parentPostId={post.id}
                 onSuccess={() => setReplyFormOpen(false)}
@@ -163,7 +163,7 @@ export function PostCard({ post, currentUserId, hideReactions = false, replies =
 
           {/* リプライ一覧（ネストされた返信を含む） */}
           {replies.length > 0 && (
-            <div className="mt-4 space-y-3 border-l-2 border-neutral-200 pl-4">
+            <div className="mt-4 space-y-3 border-l-2 border-border pl-4">
               {replies.map((reply) => (
                 <ReplyCard key={reply.id} reply={reply} currentUserId={currentUserId} />
               ))}

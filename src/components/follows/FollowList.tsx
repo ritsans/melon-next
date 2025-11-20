@@ -38,7 +38,7 @@ export function FollowList({ follows, currentUserId, viewerFollowStatuses, type 
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-neutral-500">
+          <p className="text-muted-foreground">
             {type === "followers" ? "まだフォロワーがいません" : "まだフォロー中のユーザーがいません"}
           </p>
         </CardContent>
@@ -84,7 +84,7 @@ export function FollowList({ follows, currentUserId, viewerFollowStatuses, type 
                         </h3>
                       </Link>
                       {follow.profile.display_name && (
-                        <p className="text-neutral-600 text-sm truncate">@{follow.profile.username}</p>
+                        <p className="text-muted-foreground text-sm truncate">@{follow.profile.username}</p>
                       )}
 
                       {/* 関係性バッジ */}
@@ -115,7 +115,7 @@ export function FollowList({ follows, currentUserId, viewerFollowStatuses, type 
 
                   {/* バイオ */}
                   {follow.profile.bio && (
-                    <p className="text-neutral-700 text-sm mt-2 line-clamp-2">{follow.profile.bio}</p>
+                    <p className="text-foreground text-sm mt-2 line-clamp-2">{follow.profile.bio}</p>
                   )}
                 </div>
               </div>

@@ -15,7 +15,7 @@ export async function ReplyList({ postId, currentUserId }: ReplyListProps) {
   }
 
   return (
-    <div className="mt-4 space-y-3 border-l-2 border-neutral-200 pl-4">
+    <div className="mt-4 space-y-3 border-l-2 border-border pl-4">
       {replies.map((reply) => (
         <ReplyCard key={reply.id} reply={reply} currentUserId={currentUserId} />
       ))}
