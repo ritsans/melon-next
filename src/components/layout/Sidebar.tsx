@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Home, Globe, Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { CreatePostButton } from "@/components/posts/CreatePostButton";
@@ -8,7 +9,7 @@ export async function Sidebar() {
   const user = await getCurrentUser();
 
   return (
-    <aside className="w-64 border-r bg-neutral-50 p-4">
+    <aside className="w-64 border-r bg-accent/30 p-4">
       {/* 投稿作成ボタン（ログイン時のみ） */}
       {user && (
         <div className="mb-6">
@@ -20,24 +21,24 @@ export async function Sidebar() {
       <nav className="mb-6 space-y-1">
         <Link
           href="/home"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-accent hover:text-primary"
         >
-          <span>🏠</span>
+          <Home className="h-5 w-5" />
           <span>ホーム</span>
         </Link>
         <Link
           href="/everyone"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-accent hover:text-primary"
         >
-          <span>🌐</span>
+          <Globe className="h-5 w-5" />
           <span>みんなの投稿</span>
         </Link>
         {user && (
           <Link
             href="/notifications"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-accent hover:text-primary"
           >
-            <span>🔔</span>
+            <Bell className="h-5 w-5" />
             <span>通知</span>
           </Link>
         )}
@@ -45,13 +46,13 @@ export async function Sidebar() {
 
       {/* タグリスト */}
       <Card className="p-4">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">タグ</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">タグ</h2>
         <nav className="space-y-2">
           {PRESET_TAGS.map((tag) => (
             <Link
               key={tag.value}
               href={`/tags/${tag.value}`}
-              className="block rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+              className="block rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-primary"
             >
               #{tag.label}
             </Link>

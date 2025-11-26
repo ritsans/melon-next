@@ -86,12 +86,12 @@ export function NotificationBell({ userId, initialUnreadCount = 0 }: Notificatio
 
       {/* デバッグ表示 */}
       {showDebug && lastPolled && (
-        <div className="fixed bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-md bg-neutral-900/90 px-3 py-2 text-xs text-white shadow-lg backdrop-blur-sm">
+        <div className="fixed bottom-4 right-4 animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-md bg-foreground/90 px-3 py-2 text-xs text-background shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
             <div>
               <div className="font-semibold">ポーリング実行</div>
-              <div className="text-neutral-300">
+              <div className="text-background/70">
                 {lastPolled.toLocaleTimeString("ja-JP")} | 未読: {unreadCount}
               </div>
             </div>

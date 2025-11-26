@@ -30,7 +30,7 @@ export function BackToProfileLink({ username, hasUnsavedChanges }: BackToProfile
     <Link
       href={`/profile/${username}`}
       onClick={handleClick}
-      className="flex items-center gap-1 text-neutral-600 hover:text-neutral-900 transition-colors"
+      className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
     >
       <ChevronLeft className="h-5 w-5" />
       <span>プロフィールに戻る</span>

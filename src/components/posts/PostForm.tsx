@@ -104,14 +104,8 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
         />
         <div className="flex items-center justify-between">
           <FormError error={errors.content?.message} />
-          <p className="text-sm text-neutral-500">{contentLength} / 500</p>
+          <p className="text-sm text-muted-foreground">{contentLength} / 500</p>
         </div>
-      </div>
-
-      {/* Image Upload */}
-      <div className="space-y-2">
-        <Label>画像（任意・最大4枚）</Label>
-        <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
       </div>
 
       {/* Tag Selection */}
@@ -130,7 +124,7 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
                   type="button"
                   onClick={() => removeTag(tag)}
                   disabled={isPending}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 disabled:opacity-50"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-3xl bg-accent px-3 py-1 text-sm font-medium text-primary transition-colors hover:bg-accent/80 disabled:opacity-50"
                 >
                   {label}
                   <X className="h-3 w-3" />
@@ -150,10 +144,10 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
                 type="button"
                 onClick={() => toggleTag(tag.value)}
                 disabled={isPending}
-                className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                className={`cursor-pointer rounded-3xl border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
                   isSelected
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:border-blue-400 hover:bg-blue-50"
+                    ? "border-primary bg-accent text-primary"
+                    : "border-border bg-background text-foreground hover:border-primary hover:bg-accent"
                 }`}
               >
                 {tag.label}
@@ -167,12 +161,15 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
               type="button"
               onClick={() => setShowCustomInput(true)}
               disabled={isPending}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-neutral-400 bg-white px-4 py-2 text-sm font-medium text-neutral-600 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-3xl border border-dashed border-muted-foreground bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:bg-accent hover:text-primary disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               新しいタグを入力
             </button>
           )}
+
+
+          
         </div>
 
         {/* Custom Tag Input */}
@@ -211,6 +208,12 @@ export function PostForm({ onSubmit, onCancel }: PostFormProps) {
         )}
 
         <FormError error={errors.tags?.message} />
+      </div>
+
+    {/* Image Upload */}
+      <div className="space-y-2">
+        <Label>画像（任意・最大4枚）</Label>
+        <ImageUploader images={images} onImagesChange={setImages} maxImages={4} />
       </div>
 
       {/* Error Message */}
